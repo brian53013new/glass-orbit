@@ -23,7 +23,7 @@ import './App.css'
 import './three-only.css'
 
 function App() {
-  const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('glass-orbit-locale') === 'zh' ? 'zh' : 'en'))
+  const [language, setLanguage] = useState<Language>('en')
   const [started, setStarted] = useState(false)
   const [seed, setSeed] = useState(0)
   const event = missionEvents[seed]

@@ -10,7 +10,7 @@ Children can hear that an off-world outpost needs power, life support, radiation
 
 ## Our solution
 
-Glass Orbit is a browser-based 3D pixel-card game set in one bright, museum-like transparent space room. Earth, the Moon, and Mars remain visible while the player manages a small outpost from a physical card table. Original exhibit cards carry an icon, bilingual title, cost, and short effect on their 3D faces; an in-scene plaque progressively reveals their full source and limitation. The first vertical slice contains one room, three celestial bodies, eight original task cards, three core resources, two reproducible NASA event seeds, and replayable success / partial-success / failure outcomes.
+Glass Orbit is a browser-based 3D block-pixel game set in a bright glass observatory against a dark celestial exterior. Voxel Earth, Moon, and Mars remain visible through its framed panes while the player manages a small outpost from a physical card table. Every player-facing surface is a scene object: cards, mission console, resource pillars, and a settings block. Original exhibit cards carry an icon, English-first bilingual title, cost, and short effect on their 3D faces; one click reads the console and a second click plays. The first vertical slice contains one room, three celestial bodies, eight original task cards, three core resources, two reproducible NASA event seeds, and replayable success / partial-success / failure outcomes.
 
 ## How NASA data changes a decision
 
@@ -18,17 +18,17 @@ The game ships with a date-stamped NASA DONKI CME snapshot. It reads a real reco
 
 ## Player loop
 
-1. Read the event card and distinguish observation, inference, and education model.
+1. Read the in-world mission console and distinguish observation, inference, and education model.
 2. Select a thick 3D task card from the control desk.
-3. Preview its cost and immediate resource consequence.
-4. Play a sequence such as **Energy Allocation → Radiation Shield → Life Support**.
+3. Read its cost and immediate consequence in the same 3D console.
+4. Click it again to play a sequence such as **Energy Allocation → Radiation Shield → Life Support**.
 5. Inspect the trace, outcome, and source drawer; replay with another strategy.
 
 ## Technology
 
 - React, TypeScript, Vite
-- Three.js + React Three Fiber for the glass room, low-poly bodies, control desk, and thick card meshes
-- CSS design tokens and responsive high-resolution UI layered over a deliberately low-resolution 3D canvas
+- Three.js + React Three Fiber for the glass observatory, voxel celestial bodies, control desk, physical consoles, and thick card meshes
+- Nearest-filtered canvas textures, hard-edged geometry, and a responsive 3D scene with semantic accessibility controls
 - Offline NASA DONKI JSON snapshot, SHA-256 manifest, and a data-verification script
 
 ## Data, provenance, and limitations

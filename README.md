@@ -6,10 +6,10 @@
 
 ## What is playable now
 
-- A Three.js / React Three Fiber glass room with low-poly Earth, Moon, and Mars.
-- Thick, raycast-selectable 3D card meshes plus keyboard- and touch-accessible card controls.
-- A bright museum-style scene with warm glass, pearl-metal framing, original pixel exhibit-card faces, and an in-scene data plaque that returns to the same desk on Escape.
-- Complete Traditional Chinese / English switching across card faces, game controls, source material, mission trace, and outcomes.
+- A Three.js / React Three Fiber glass observatory with voxel Earth, Moon, and Mars outside its framed panes.
+- A visible 3D-only play surface: upright physical card meshes, an in-scene mission console, resource pillars, and a clickable settings block. The hidden semantic controls preserve keyboard and touch access.
+- A dark celestial exterior, bright glass-and-metal interior, nearest-filtered pixel textures, hard edges, and no bloom or blur.
+- English is the default; the 3D settings block switches to Traditional Chinese and remembers the preference locally.
 - Two reproducible NASA event seeds for free replay and strategy comparison after a run.
 - Eight original cards, three core resources, a visible card-cost preview, a source drawer, a replayable trace, and success / partial / failure outcomes.
 - A saved NASA DONKI CME JSON snapshot. Its observed 1018 km/s analysis changes the **education-model** shield goal from 2 to 3. This is deliberately not a scientific risk calculation.
@@ -56,4 +56,4 @@ See the [NASA DONKI portal](https://ccmc.gsfc.nasa.gov/tools/DONKI/) and the [ch
 
 ## Deliberate scope
 
-This is the first vertical slice: one room, three celestial bodies, eight cards, one real data source, and a replayable mission. It does not claim that the short evaluation path is a complete curriculum or a real operational mission plan. The target for a judge-facing guided session is 8–12 minutes; the compact success path is intentionally shorter for testing and video capture.
+This is the first vertical slice: one room, three celestial bodies, eight cards, one real data source, and a replayable mission. It does not claim that the short evaluation path is a complete curriculum or a real operational mission plan. A first click reads a card in the 3D console; a second click plays it. The target for a judge-facing guided session is 8–12 minutes; the compact success path is intentionally shorter for testing and video capture.

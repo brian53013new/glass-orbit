@@ -1,0 +1,16 @@
+/* The accessible DOM remains available, while the player-facing control surface lives in the scene graph. */
+.in-mission .topbar,
+.in-mission .celestial-label,
+.in-mission .event-card,
+.in-mission .nova,
+.in-mission .resource-bar,
+.in-mission .world-detail,
+.in-mission .planet-focus,
+.in-mission .source-drawer,
+.in-mission .result-card { display: none; }
+
+.in-mission .mission-room { height: calc(100vh - 1px); min-height: 640px; border: 0; background: #070f27; }
+.in-mission .control-deck { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; margin: 0; padding: 0; pointer-events: none; }
+.in-mission .orbit-canvas { image-rendering: pixelated; }
+
+.in-mission .app-shell { background: #070f27; }

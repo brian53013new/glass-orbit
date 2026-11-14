@@ -1,6 +1,6 @@
 # Glass Orbit｜玻璃軌道
 
-> [繁體中文版 README](README.zh-TW.md)
+> **Live Demo / 線上試玩**：https://brian53013new.github.io/glass-orbit/ ｜ [繁體中文版 README](README.zh-TW.md)
 
 **Glass Orbit** is a browser-based 3D pixel-card educational game for ages 7–12. Built for the **2026 NASA Space Apps Challenge — The Next Frontier / Build a Junior Astronaut Mission Trainer**, it lets a player use one archived NASA observation to make a fictional Moon/Mars-outpost decision about power, life support, and radiation protection.
 

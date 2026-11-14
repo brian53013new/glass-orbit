@@ -1,6 +1,6 @@
 # Glass Orbit｜玻璃軌道
 
-> [English README](README.md)
+> **線上試玩（Live Demo）**：https://brian53013new.github.io/glass-orbit/ ｜ [English README](README.md)
 
 **Glass Orbit（玻璃軌道）** 是一款為 7–12 歲學習者設計的網頁 3D 太空天氣桌遊教學原型，針對 **2026 NASA Space Apps Challenge — The Next Frontier / Build a Junior Astronaut Mission Trainer** 打造。玩家在 360° 全透明玻璃觀測艙內，透過真實 NASA 觀測資料做出月球／火星前哨站的電力、生命維持與輻射防護決策。
 

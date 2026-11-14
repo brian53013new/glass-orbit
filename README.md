@@ -8,7 +8,8 @@
 
 - A Three.js / React Three Fiber glass observatory with voxel Earth, Moon, and Mars outside its framed panes.
 - A visible 3D-only play surface: upright physical card meshes, an in-scene mission console, resource pillars, and a clickable settings block. The hidden semantic controls preserve keyboard and touch access.
-- A dark celestial exterior, bright glass-and-metal interior, nearest-filtered pixel textures, hard edges, and no bloom or blur.
+- A dark celestial exterior, bright glass-and-metal interior, high-resolution rendering, hard-edged voxel geometry, and no full-screen pixelation, bloom, or blur.
+- A real card-detail sequence: lift, short depth arc, enlargement, source plaque, and Escape-to-return in the same 3D room.
 - English is the default; the 3D settings block switches to Traditional Chinese and remembers the preference locally.
 - Two reproducible NASA event seeds for free replay and strategy comparison after a run.
 - Eight original cards, three core resources, a visible card-cost preview, a source drawer, a replayable trace, and success / partial / failure outcomes.
@@ -52,6 +53,7 @@ See the [NASA DONKI portal](https://ccmc.gsfc.nasa.gov/tools/DONKI/) and the [ch
 - [Project Page draft](PROJECT_PAGE.md)
 - [90-second walkthrough and six-shot fallback plan](WALKTHROUGH_SCRIPT.md)
 - [Sources and third-party notices](THIRD_PARTY.md)
+- [Detailed 3D implementation audit](IMPLEMENTATION_AUDIT.md)
 - [MIT License](LICENSE)
 
 ## Deliberate scope

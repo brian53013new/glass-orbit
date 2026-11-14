@@ -28,7 +28,7 @@ The game ships with a date-stamped NASA DONKI CME snapshot. It reads a real reco
 
 - React, TypeScript, Vite
 - Three.js + React Three Fiber for the glass observatory, voxel celestial bodies, control desk, physical consoles, and thick card meshes
-- Nearest-filtered canvas textures, hard-edged geometry, and a responsive 3D scene with semantic accessibility controls
+- High-resolution WebGL, hard-edged geometry, detailed shadows, and a responsive 3D scene with semantic accessibility controls
 - Offline NASA DONKI JSON snapshot, SHA-256 manifest, and a data-verification script
 
 ## Data, provenance, and limitations

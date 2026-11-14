@@ -115,7 +115,12 @@ export function WorldScreen3D({
   )
   useEffect(() => () => texture.dispose(), [texture])
 
-  const nasaImagePath = id === 'event' ? '/nasa/earth.jpg' : id === 'outpost' ? '/nasa/cme.jpg' : '/nasa/mars.jpg'
+  const nasaImagePath =
+    id === 'event'
+      ? `${import.meta.env.BASE_URL}nasa/earth.jpg`
+      : id === 'outpost'
+        ? `${import.meta.env.BASE_URL}nasa/cme.jpg`
+        : `${import.meta.env.BASE_URL}nasa/mars.jpg`
   const [nasaPhoto, setNasaPhoto] = useState<THREE.Texture | null>(null)
   useEffect(() => {
     let active = true

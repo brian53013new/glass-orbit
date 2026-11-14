@@ -12,7 +12,7 @@ export const PLANET_LAYOUT: Record<
     cam: [-9.2, 2.8, 1.2],
     radius: 2.1,
     tilt: 0.409, // 23.4° axial tilt
-    texture: '/nasa/earth.jpg',
+    texture: `${import.meta.env.BASE_URL}nasa/earth.jpg`,
     color: '#1b6ca8',
     accent: '#63d2ff',
   },
@@ -21,7 +21,7 @@ export const PLANET_LAYOUT: Record<
     cam: [-8.5, 3.4, 3.2],
     radius: 0.58,
     tilt: 0.116, // 6.7°
-    texture: '/nasa/moon.jpg',
+    texture: `${import.meta.env.BASE_URL}nasa/moon.jpg`,
     color: '#b8bec2',
     accent: '#e5ecea',
   },
@@ -30,7 +30,7 @@ export const PLANET_LAYOUT: Record<
     cam: [2.4, 3.1, 10.5],
     radius: 1.15, // ~0.55x Earth
     tilt: 0.44, // 25.2° axial tilt
-    texture: '/nasa/mars.jpg',
+    texture: `${import.meta.env.BASE_URL}nasa/mars.jpg`,
     color: '#b85438',
     accent: '#ff9668',
   },

@@ -1,0 +1,13 @@
+{
+  "dataset": "NASA-DONKI CME",
+  "requestUrl": "https://api.nasa.gov/DONKI/CME?startDate=2024-05-10&endDate=2024-05-11&api_key=DEMO_KEY",
+  "retrievedAtUtc": "2026-11-14T07:23:36.1615613Z",
+  "httpStatus": 200,
+  "originalEventDate": "2024-05-10T07:12Z",
+  "sha256": "b2437563d9e53752ca97ee28b6c6d3495a24d92f8ad4ba21533e6e3e86b04f00",
+  "isOfflineSnapshot": true,
+  "licenseOrTermsUrl": "https://api.nasa.gov/",
+  "gameUse": "A NASA-recorded CME gives a child-friendly prompt to prioritize a fictional outpost's protection. It is not a forecast or operational model.",
+  "educationAbstraction": "Power, life support, shield, evidence, and communication scores are game mechanics only.",
+  "limitations": ["The snapshot is historical, not live space-weather information.", "The game does not calculate radiation dose, spacecraft exposure, or mission safety.", "A CME speed alone does not determine risk to a location or mission."]
+}

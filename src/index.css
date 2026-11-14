@@ -1,0 +1,3 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+:root { font-family: 'Noto Sans TC', system-ui, sans-serif; color: #eff4e9; background: #07111d; font-synthesis: none; text-rendering: optimizeLegibility; }
+* { box-sizing: border-box; } body { margin: 0; min-width: 320px; min-height: 100vh; background: #07111d; } button, a { font: inherit; } button { cursor: pointer; } button:focus-visible, a:focus-visible { outline: 2px solid #f4cb68; outline-offset: 3px; }

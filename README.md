@@ -11,9 +11,8 @@
 - A dark celestial exterior, bright glass-and-metal interior, high-resolution rendering, hard-edged voxel geometry, and no full-screen pixelation, bloom, or blur.
 - A real card-detail sequence: lift, short depth arc, enlargement, source plaque, and Escape-to-return in the same 3D room.
 - Three mosaic-glass mission screens with shared camera dolly focus, rich world-space records, and Escape-to-return without resetting the board.
-- English is the default; the 3D settings block switches to Traditional Chinese and remembers the preference locally.
-- Two reproducible NASA event seeds for free replay and strategy comparison after a run.
-- Eight original cards, three core resources, a visible card-cost preview, a source drawer, a replayable trace, and success / partial / failure outcomes.
+- English is the default on every page load; the 3D dial and top-right toggle switch to Traditional Chinese during the session.
+- Eight mission events (6 real NASA DONKI CME snapshots + 2 designed training scenarios), 12 original cards (with `★ SKILL` abilities), an original Web Audio ambient soundtrack, and a live NOVA companion narrator.
 - A saved NASA DONKI CME JSON snapshot. Its observed 1018 km/s analysis changes the **education-model** shield goal from 2 to 3. This is deliberately not a scientific risk calculation.
 - Bounded camera parallax, planet focus, Escape-to-return, and reduced-motion handling.
 
@@ -51,11 +50,14 @@ See the [NASA DONKI portal](https://ccmc.gsfc.nasa.gov/tools/DONKI/) and the [ch
 
 ## Submission material
 
-- [Project Page draft](PROJECT_PAGE.md)
-- [90-second walkthrough and six-shot fallback plan](WALKTHROUGH_SCRIPT.md)
 - [Sources and third-party notices](THIRD_PARTY.md)
-- [Detailed 3D implementation audit](IMPLEMENTATION_AUDIT.md)
 - [MIT License](LICENSE)
+
+## AI Usage Disclosure｜AI 使用說明
+
+- **Development Environment / 開發環境**：Visual Studio Code (VS Code)
+- **Originality / 原創聲明**：The entire website—including the game concept, 360° glass observatory architecture, monochrome interior vs. color space aesthetic, mission structure, and every interactive detail—is an **original human design**, not an AI-generated template.
+- **AI Assistance Scope (~40% of codebase) / AI 協助範圍（約占總程式碼 40%）**：AI was used inside VS Code as a development assistant to help modify complex logic and optimize existing code, with the **majority of AI-assisted code concentrated in frontend UI layout and styling**.
 
 ## Deliberate scope
 

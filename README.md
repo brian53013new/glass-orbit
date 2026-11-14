@@ -6,6 +6,15 @@
 
 > This is an independent, non-official NASA education prototype. It is not NASA-certified training, a radiation-dose calculator, a safety tool, a mission simulator, or an operational forecast.
 
+## AI Usage Disclosure｜AI 使用說明
+
+- **Development Environment**: Visual Studio Code (VS Code).
+- **Original Design & Ownership**: The entire website concept, 360° glass observatory architecture, monochrome interior vs. full-color space aesthetic, 12-card tactical ruleset, 8-event mission structure, and all interactive details are **original human design**, not an AI-generated template.
+- **AI Assistance Scope (~40% of total codebase)**: AI was used inside VS Code as a coding assistant to help modify complex logic and optimize existing code, with the **vast majority of AI-assisted code concentrated in frontend UI layout and styling**:
+  - **Frontend UI & Styling (primary AI usage)**: Launch screen overlay, top HUD pill bar, expandable narrator drawer, and monochrome editorial CSS layout.
+  - **Complex Code Optimization**: Assisting with Three.js / React Three Fiber camera transitions, Canvas 2D card/screen texture rendering, Web Audio API procedural background music, and TypeScript/lint refactoring.
+- **Human Verification**: All NASA DONKI datasets, SHA-256 integrity checks (`npm run verify:data`), scientific scope boundaries, and final gameplay/visual decisions were reviewed and verified by the author.
+
 ## What is playable now
 
 - A Three.js / React Three Fiber glass observatory with voxel Earth, Moon, and Mars outside its framed panes.
@@ -54,12 +63,6 @@ See the [NASA DONKI portal](https://ccmc.gsfc.nasa.gov/tools/DONKI/) and the [ch
 
 - [Sources and third-party notices](THIRD_PARTY.md)
 - [MIT License](LICENSE)
-
-## AI Usage Disclosure｜AI 使用說明
-
-- **Development Environment / 開發環境**：Visual Studio Code (VS Code)
-- **Originality / 原創聲明**：The entire website—including the game concept, 360° glass observatory architecture, monochrome interior vs. color space aesthetic, mission structure, and every interactive detail—is an **original human design**, not an AI-generated template.
-- **AI Assistance Scope (~40% of codebase) / AI 協助範圍（約占總程式碼 40%）**：AI was used inside VS Code as a development assistant to help modify complex logic and optimize existing code, with the **majority of AI-assisted code concentrated in frontend UI layout and styling**.
 
 ## Deliberate scope
 

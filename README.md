@@ -10,6 +10,7 @@
 - A visible 3D-only play surface: upright physical card meshes, an in-scene mission console, resource pillars, and a clickable settings block. The hidden semantic controls preserve keyboard and touch access.
 - A dark celestial exterior, bright glass-and-metal interior, high-resolution rendering, hard-edged voxel geometry, and no full-screen pixelation, bloom, or blur.
 - A real card-detail sequence: lift, short depth arc, enlargement, source plaque, and Escape-to-return in the same 3D room.
+- Three mosaic-glass mission screens with shared camera dolly focus, rich world-space records, and Escape-to-return without resetting the board.
 - English is the default; the 3D settings block switches to Traditional Chinese and remembers the preference locally.
 - Two reproducible NASA event seeds for free replay and strategy comparison after a run.
 - Eight original cards, three core resources, a visible card-cost preview, a source drawer, a replayable trace, and success / partial / failure outcomes.

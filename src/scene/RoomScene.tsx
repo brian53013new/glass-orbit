@@ -36,6 +36,8 @@ export function RoomScene({
   onOpenSource,
   onOpenBrief,
   previewMode = false,
+  musicOn = true,
+  onToggleMusic,
 }: {
   language: Language
   selected: string | null
@@ -63,6 +65,8 @@ export function RoomScene({
   onOpenSource: () => void
   onOpenBrief: () => void
   previewMode?: boolean
+  musicOn?: boolean
+  onToggleMusic?: () => void
 }) {
   const current = cards.find((item) => item.id === selected) ?? null
   const course = microCourses.find((item) => item.eventId === mission.record.activityID) ?? microCourses[0]
@@ -375,6 +379,11 @@ export function RoomScene({
           )}
           <button onClick={onNewEvent}>{language === 'zh' ? '換事件' : 'Next Event'}</button>
           <button onClick={resetView}>{language === 'zh' ? '視角回正' : 'Reset View'}</button>
+          {onToggleMusic && (
+            <button onClick={onToggleMusic}>
+              {musicOn ? (language === 'zh' ? '♪ 音樂 開' : '♪ BGM ON') : language === 'zh' ? '♪ 音樂 關' : '♪ BGM OFF'}
+            </button>
+          )}
           <button onClick={onOpenSource}>{language === 'zh' ? 'NASA 資料來源' : 'NASA Source'}</button>
           <button onClick={onOpenBrief}>{language === 'zh' ? '任務簡介' : 'Brief'}</button>
         </div>

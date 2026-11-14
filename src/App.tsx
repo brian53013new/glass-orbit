@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { RoomScene } from './scene/RoomScene'
+import { soundtrack } from './game/soundtrack'
 import {
   cards,
   initialRun,
@@ -38,6 +39,7 @@ function App() {
   const [focus, setFocus] = useState<PlanetName | null>(null)
   const [reducedMotion, setReducedMotion] = useState(false)
   const [compact, setCompact] = useState(() => window.innerWidth < 640)
+  const [musicOn, setMusicOn] = useState(true)
   const returnTimer = useRef<number | null>(null)
   const screenTimers = useRef<number[]>([])
 
@@ -192,6 +194,7 @@ function App() {
       return allTargetsMet || next.turns >= 5 ? finish(next) : next
     })
     closeDetail()
+    soundtrack.playCardChime()
   }
 
   const play = () => {
@@ -305,6 +308,15 @@ function App() {
           onOpenSource={() => setSourceOpen((value) => !value)}
           onOpenBrief={() => setStarted(false)}
           previewMode={!started}
+          musicOn={musicOn}
+          onToggleMusic={() => {
+            setMusicOn((prev) => {
+              const next = !prev
+              if (next) soundtrack.start()
+              else soundtrack.stop()
+              return next
+            })
+          }}
         />
 
         {!started && (
@@ -343,7 +355,13 @@ function App() {
                 </div>
               </div>
               <div className="cockpit-actions">
-                <button className="primary-button cockpit-start-btn" onClick={() => setStarted(true)}>
+                <button
+                  className="primary-button cockpit-start-btn"
+                  onClick={() => {
+                    setStarted(true)
+                    if (musicOn) soundtrack.start()
+                  }}
+                >
                   ▶ {T('進入太空艙開始任務', 'LAUNCH MISSION')}
                 </button>
                 <button className="cockpit-secondary-btn" onClick={() => setSourceOpen(true)}>

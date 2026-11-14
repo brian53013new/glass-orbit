@@ -10,7 +10,7 @@ Children can hear that an off-world outpost needs power, life support, radiation
 
 ## Our solution
 
-Glass Orbit is a browser-based 3D pixel-card game set in one transparent space room. Earth, the Moon, and Mars remain visible while the player manages a small outpost from a physical card table. The first vertical slice contains one room, three celestial bodies, eight original task cards, three core resources, one NASA event, and replayable success / partial-success / failure outcomes.
+Glass Orbit is a browser-based 3D pixel-card game set in one bright, museum-like transparent space room. Earth, the Moon, and Mars remain visible while the player manages a small outpost from a physical card table. Original exhibit cards carry an icon, bilingual title, cost, and short effect on their 3D faces; an in-scene plaque progressively reveals their full source and limitation. The first vertical slice contains one room, three celestial bodies, eight original task cards, three core resources, two reproducible NASA event seeds, and replayable success / partial-success / failure outcomes.
 
 ## How NASA data changes a decision
 

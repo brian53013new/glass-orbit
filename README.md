@@ -8,6 +8,9 @@
 
 - A Three.js / React Three Fiber glass room with low-poly Earth, Moon, and Mars.
 - Thick, raycast-selectable 3D card meshes plus keyboard- and touch-accessible card controls.
+- A bright museum-style scene with warm glass, pearl-metal framing, original pixel exhibit-card faces, and an in-scene data plaque that returns to the same desk on Escape.
+- Complete Traditional Chinese / English switching across card faces, game controls, source material, mission trace, and outcomes.
+- Two reproducible NASA event seeds for free replay and strategy comparison after a run.
 - Eight original cards, three core resources, a visible card-cost preview, a source drawer, a replayable trace, and success / partial / failure outcomes.
 - A saved NASA DONKI CME JSON snapshot. Its observed 1018 km/s analysis changes the **education-model** shield goal from 2 to 3. This is deliberately not a scientific risk calculation.
 - Bounded camera parallax, planet focus, Escape-to-return, and reduced-motion handling.

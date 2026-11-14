@@ -6,7 +6,7 @@ Show the launch screen. Say: “Glass Orbit is a non-official NASA educational c
 
 ## The room — 0:10–0:25
 
-Start the mission. Pan subtly across the transparent glass room, Earth, Moon, Mars, and the card desk. Say: “One room keeps every consequence visible. Earth suggests supplies, the Moon a near outpost, and Mars longer waits.”
+Start the mission. Pan subtly across the bright transparent museum room, Earth, Moon, Mars, and the card desk. Point out that each physical card face carries its own original pixel icon, title, cost, and short effect. Say: “One room keeps every consequence visible. Earth suggests supplies, the Moon a near outpost, and Mars longer waits.”
 
 ## Data card — 0:25–0:40
 
@@ -14,7 +14,7 @@ Open the source drawer and point to the date, speed, URL, UTC retrieval time, an
 
 ## Decisions — 0:40–1:00
 
-Close the drawer. Select **儲能分配**, then **輻射護盾**, then **生命維持**. Pause on each preview to show cost and effect. Let the shield ring appear after the shield card. Say: “Each card asks for a resource before it gives one back. The order creates the trade-off.”
+Close the drawer. Switch between Traditional Chinese and English, then select **儲能分配**, **晨曦護盾**, and **生命維持**. Pause on the in-scene plaque to show source, original date, education model, and limitation; let the shield ring appear after the shield card. Say: “Each card asks for a resource before it gives one back. The order creates the trade-off.”
 
 ## Evidence and result — 1:00–1:15
 

@@ -1,0 +1,26 @@
+{
+  "earth": {
+    "nasa_id": "GSFC_20171208_Archive_e001386",
+    "title": "Most Amazing High Definition Image of Earth - Blue Marble 2012",
+    "date": "2017-12-08T00:00:00Z",
+    "url": "https://images-assets.nasa.gov/image/GSFC_20171208_Archive_e001386/GSFC_20171208_Archive_e001386~thumb.jpg"
+  },
+  "moon": {
+    "nasa_id": "GSFC_20171208_Archive_e001861",
+    "title": "Full Moon",
+    "date": "2017-12-08T00:00:00Z",
+    "url": "https://images-assets.nasa.gov/image/GSFC_20171208_Archive_e001861/GSFC_20171208_Archive_e001861~thumb.jpg"
+  },
+  "cme": {
+    "nasa_id": "PIA21836",
+    "title": "Bastille Day Solar Flare and a Coronal Mass Ejection",
+    "date": "2017-07-18T00:00:00Z",
+    "url": "https://images-assets.nasa.gov/image/PIA21836/PIA21836~thumb.jpg"
+  },
+  "mars": {
+    "nasa_id": "PIA02005",
+    "title": "Tharsis Volcanoes and Valles Marineris, Mars",
+    "date": "2000-06-14T07:00:30Z",
+    "url": "https://images-assets.nasa.gov/image/PIA02005/PIA02005~thumb.jpg"
+  }
+}

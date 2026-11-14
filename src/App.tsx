@@ -1,131 +1,688 @@
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import * as THREE from 'three'
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
-import snapshot from './data/donki-cme-2024-05-10.snapshot.json'
-import { microCourses, type MicroCourse } from './data/micro-courses'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { RoomScene } from './scene/RoomScene'
+import {
+  cards,
+  initialRun,
+  missionEvents,
+  resources,
+  source,
+  text,
+  type CardDefinition,
+  type CardDetailState,
+  type GameEvent,
+  type Language,
+  type Outcome,
+  type PlanetName,
+  type ResourceKey,
+  type RunState,
+  type ScreenFocusState,
+  type ScreenId,
+} from './types'
 import './App.css'
 import './three-only.css'
 
-type Language = 'zh' | 'en'
-type LocalText = Record<Language, string>
-type ResourceKey = 'power' | 'lifeSupport' | 'shield'
-type Resources = Record<ResourceKey, number>
-type Outcome = 'playing' | 'success' | 'partial' | 'failed'
-type PlanetName = 'EARTH' | 'MOON' | 'MARS'
-type CardDetailState = 'closed' | 'lifting' | 'moving' | 'expanded' | 'returning'
-type ScreenId = 'event' | 'outpost' | 'field'
-type ScreenFocusState = 'overview' | 'targeting' | 'dollyIn' | 'focused' | 'returning'
-type TutorialStep = 'room' | 'look' | 'language' | 'screen' | 'card' | 'play' | 'complete' | 'skipped'
-
-type CmeRecord = { activityID: string; startTime: string; instruments: { displayName: string }[]; sourceLocation: string; cmeAnalyses: { isMostAccurate: boolean; speed: number; measurementTechnique: string; note: string }[]; link: string }
-type MissionEvent = { record: CmeRecord; speed: number; technique: string; shieldTarget: number }
-type CardDefinition = { id: string; symbol: string; category: LocalText; title: LocalText; shortEffect: LocalText; detail: LocalText; cost: Partial<Resources>; effects: Partial<Resources> & { evidence?: number; comms?: number }; prerequisites: string[]; limitations: LocalText }
-type GameEvent = { type: 'draw_event' | 'play_card' | 'consume_cost' | 'update_resource' | 'reveal_evidence' | 'finish_run'; cardId?: string; resources?: Resources; cost?: Partial<Resources>; event?: MissionEvent; outcome?: Outcome }
-type RunState = { resources: Resources; evidence: number; comms: number; turns: number; played: string[]; outcome: Outcome; events: GameEvent[] }
-
-const text = (value: LocalText, language: Language) => value[language]
-const source = { officialUrl: 'https://ccmc.gsfc.nasa.gov/tools/DONKI/', challengeUrl: 'https://www.spaceappschallenge.org/2026/challenges/junior-astronaut-mission-trainer/', retrievedAtUtc: '2026-11-14T07:23:36.1615613Z', originalDate: '2024-05-10T07:12Z', sha256: 'b2437563d9e53752ca97ee28b6c6d3495a24d92f8ad4ba21533e6e3e86b04f00' }
-const records = snapshot as CmeRecord[]
-const makeMission = (activityID: string): MissionEvent => { const record = records.find((item) => item.activityID === activityID)!; const analysis = record.cmeAnalyses.find((item) => item.isMostAccurate)!; return { record, speed: analysis.speed, technique: analysis.measurementTechnique, shieldTarget: analysis.speed >= 1000 ? 3 : 2 } }
-const missionEvents = microCourses.map((course) => makeMission(course.eventId))
-
-const card = (id: string, symbol: string, category: LocalText, title: LocalText, shortEffect: LocalText, detail: LocalText, cost: Partial<Resources>, effects: CardDefinition['effects'], prerequisites: string[], limitations: LocalText): CardDefinition => ({ id, symbol, category, title, shortEffect, detail, cost, effects, prerequisites, limitations })
-const cards: CardDefinition[] = [
-  card('power-route', '⚡', { zh: '能源', en: 'POWER' }, { zh: '儲能分配', en: 'Power Reserve' }, { zh: '消耗 1 電力，儲備 +2。', en: 'Spend 1 power; reserve +2.' }, { zh: '今天留下一點能源，明天就有多一種安全選項。', en: 'Save some energy today to make another safe choice tomorrow.' }, { power: 1 }, { power: 2 }, [], { zh: '電力點是遊戲規則，不是 NASA 電力預算。', en: 'Power points are game rules, not a NASA power budget.' }),
-  card('life-support', '◌', { zh: '基地', en: 'OUTPOST' }, { zh: '生命維持', en: 'Life Support' }, { zh: '消耗 2 電力，生命維持 +2。', en: 'Spend 2 power; life support +2.' }, { zh: '氧氣、水與舒適空間都需要先分配能量。', en: 'Air, water, and a comfortable room all need allocated energy.' }, { power: 2 }, { lifeSupport: 2 }, [], { zh: '生命維持點是兒童教育抽象，不是醫療或工程建議。', en: 'Life-support points are an education model, not medical or engineering advice.' }),
-  card('radiation-shield', '◇', { zh: '防護', en: 'PROTECTION' }, { zh: '晨曦護盾', en: 'Dawn Shield' }, { zh: '消耗 2 電力，護盾 +3。', en: 'Spend 2 power; shield +3.' }, { zh: '用可用的電力換取較高的保護狀態，再決定是否探索。', en: 'Trade available power for more protection before choosing whether to explore.' }, { power: 2 }, { shield: 3 }, ['power-route'], { zh: '護盾點不是輻射劑量預測或任務安全判定。', en: 'Shield points are not a radiation-dose forecast or a mission-safety decision.' }),
-  card('antenna', '⌁', { zh: '通訊', en: 'COMMS' }, { zh: '對準天線', en: 'Align Antenna' }, { zh: '消耗 1 電力，通訊 +1。', en: 'Spend 1 power; comms +1.' }, { zh: '遠距離的訊息要對準、等待，也可能延遲。', en: 'Long-distance messages need aiming and waiting, and may be delayed.' }, { power: 1 }, { comms: 1 }, [], { zh: '通訊標記不是實際網路延遲量測。', en: 'The communication marker is not a network-latency measurement.' }),
-  card('observation', '◉', { zh: '科學', en: 'SCIENCE' }, { zh: '觀測窗口', en: 'Observation Window' }, { zh: '消耗 1 生命維持，證據 +1。', en: 'Spend 1 life support; evidence +1.' }, { zh: '先看見證據，再把觀察和自己的推論分開。', en: 'See the evidence first, then separate observation from your inference.' }, { lifeSupport: 1 }, { evidence: 1 }, [], { zh: '一張證據卡不能證明所有太空環境結論。', en: 'One evidence card cannot prove every conclusion about space.' }),
-  card('repair', '⌘', { zh: '維修', en: 'REPAIR' }, { zh: '維修接線', en: 'Repair Circuit' }, { zh: '消耗 1 電力，護盾 +1。', en: 'Spend 1 power; shield +1.' }, { zh: '先修好共同的基礎設備，其他選擇才會有空間。', en: 'Repair shared basics first so other choices remain possible.' }, { power: 1 }, { shield: 1 }, [], { zh: '此效果是遊戲化維修，不代表真實操作程序。', en: 'This is game-like repair, not a real operating procedure.' }),
-  card('supply-trade', '↔', { zh: '取捨', en: 'TRADE-OFF' }, { zh: '補給交換', en: 'Supply Exchange' }, { zh: '消耗 1 護盾，生命維持 +2。', en: 'Spend 1 shield; life support +2.' }, { zh: '資源有限時，補上一種需求可能會少掉另一種保護。', en: 'When resources are limited, meeting one need may reduce another protection.' }, { shield: 1 }, { lifeSupport: 2 }, [], { zh: '交換比率只服務教學，不是補給規格。', en: 'The exchange rate serves learning only, not supply specifications.' }),
-  card('safe-standby', '□', { zh: '備援', en: 'BACKUP' }, { zh: '安全停機', en: 'Safe Standby' }, { zh: '不花資源，護盾 +1。', en: 'No cost; shield +1.' }, { zh: '暫停探索也可以是照顧基地的一種決定。', en: 'Pausing exploration can also be a decision that cares for the outpost.' }, {}, { shield: 1 }, [], { zh: '停機情境是遊戲化選擇，並非 NASA 指令。', en: 'The standby scenario is a game choice, not a NASA instruction.' }),
-]
-
-const resources: Record<ResourceKey, { label: LocalText; icon: string; tone: string }> = { power: { label: { zh: '電力', en: 'Power' }, icon: '⚡', tone: 'gold' }, lifeSupport: { label: { zh: '生命維持', en: 'Life support' }, icon: '◌', tone: 'aqua' }, shield: { label: { zh: '護盾', en: 'Shield' }, icon: '◇', tone: 'coral' } }
-const initialRun = (event: MissionEvent): RunState => ({ resources: { power: 4, lifeSupport: 3, shield: 0 }, evidence: 0, comms: 0, turns: 0, played: [], outcome: 'playing', events: [{ type: 'draw_event', event }] })
-
-function CameraRig({ focus, reducedMotion, screenId, screenFocus, viewYaw }: { focus: PlanetName | null; reducedMotion: boolean; screenId: ScreenId | null; screenFocus: ScreenFocusState; viewYaw: number }) {
-  const { camera, pointer } = useThree(); const target = useRef(new THREE.Vector3(0, 3.2, 10)); const lookAt = useRef(new THREE.Vector3(0, 1.3, 0))
-  useFrame(() => { const points: Record<PlanetName, [[number, number, number], [number, number, number]]> = { EARTH: [[-5, 3, 6], [-3, 1.6, -1]], MOON: [[0, 3, 6], [0, 1.5, -1]], MARS: [[5, 3, 6], [3, 1.6, -1]] }; const screens: Record<ScreenId, [[number, number, number], [number, number, number]]> = { event: [[-5.1, 1.85, 4.9], [-3.18, 1.48, -1.48]], outpost: [[0, 3.1, 6.0], [0, 2.28, -2.06]], field: [[5.1, 1.85, 4.9], [3.18, 1.48, -1.48]] }; if (screenId && (screenFocus === 'dollyIn' || screenFocus === 'focused')) { target.current.set(...screens[screenId][0]); lookAt.current.set(...screens[screenId][1]) } else if (focus) { target.current.set(...points[focus][0]); lookAt.current.set(...points[focus][1]) } else { const x = reducedMotion ? 0 : pointer.x * .18; const y = reducedMotion ? 0 : pointer.y * .12; const orbit = viewYaw * 2.15; target.current.set(x + orbit, 3.2 + y, 10 - Math.abs(viewYaw) * .42); lookAt.current.set(x * .12 + viewYaw * .9, 1.28 + y * .08, -0.1) }; camera.position.lerp(target.current, reducedMotion ? .24 : .07); camera.lookAt(lookAt.current) })
-  return null
-}
-function PixelStars() { const stars = useRef<THREE.InstancedMesh>(null); useEffect(() => { if (!stars.current) return; const dummy = new THREE.Object3D(); const color = new THREE.Color(); for (let index = 0; index < 86; index += 1) { const size = index % 9 === 0 ? .07 : .035; dummy.position.set(((index * 29) % 23) - 11.5, ((index * 17) % 12) - 2, -6 - ((index * 7) % 10)); dummy.scale.setScalar(size); dummy.updateMatrix(); stars.current.setMatrixAt(index, dummy.matrix); color.set(index % 7 === 0 ? '#d5b261' : index % 5 === 0 ? '#6cabc2' : '#d4e3e5'); stars.current.setColorAt(index, color) } stars.current.instanceMatrix.needsUpdate = true; if (stars.current.instanceColor) stars.current.instanceColor.needsUpdate = true }, []); return <instancedMesh ref={stars} args={[undefined, undefined, 86]}><boxGeometry args={[1, 1, 1]} /><meshBasicMaterial vertexColors /></instancedMesh> }
-
-function MuseumRoom({ protectedRoom }: { protectedRoom: boolean }) { return <group><mesh position={[0, 2.5, -2.5]}><boxGeometry args={[13, 6.2, .06]} /><meshPhysicalMaterial color="#a8d4df" transparent opacity={.13} roughness={.08} metalness={.18} /></mesh><lineSegments position={[0, 2.5, -2.5]}><edgesGeometry args={[new THREE.BoxGeometry(13, 6.2, .1)]} /><lineBasicMaterial color="#c8a764" transparent opacity={.72} /></lineSegments>{[-6.5, -4.3, 0, 4.3, 6.5].map((x) => <group key={x}><mesh position={[x, 2.5, -2.42]}><boxGeometry args={[x === -6.5 || x === 6.5 ? .13 : .055, 6.2, .12]} /><meshStandardMaterial color="#b5c9c8" metalness={.78} roughness={.32} /></mesh><mesh position={[x, 5.58, -2.5]}><boxGeometry args={[.21, .17, .21]} /><meshStandardMaterial color="#d2ae64" emissive="#d2ae64" emissiveIntensity={.3} /></mesh></group>)}<mesh position={[0, 5.55, -2.46]}><boxGeometry args={[13, .1, .12]} /><meshStandardMaterial color="#bdc9c1" metalness={.72} roughness={.32} /></mesh>{protectedRoom && <mesh position={[0, 2.2, -1.8]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[5.8, .04, 4, 40]} /><meshBasicMaterial color="#d56e5e" /></mesh>}</group> }
-function MosaicGlassTiles() { const tiles = useRef<THREE.InstancedMesh>(null); useEffect(() => { if (!tiles.current) return; const dummy = new THREE.Object3D(); const color = new THREE.Color(); const palette = ['#315f77', '#69a8a0', '#d6b868', '#9d5c51', '#d7e5df', '#5686a4']; for (let index = 0; index < 312; index += 1) { const column = index % 26; const row = Math.floor(index / 26); dummy.position.set(-6.02 + column * .482, .24 + row * .46, 0); dummy.updateMatrix(); tiles.current.setMatrixAt(index, dummy.matrix); color.set(palette[index % palette.length]); tiles.current.setColorAt(index, color) } tiles.current.instanceMatrix.needsUpdate = true; if (tiles.current.instanceColor) tiles.current.instanceColor.needsUpdate = true }, []); return <group position={[0, 0, -2.36]}><instancedMesh ref={tiles} args={[undefined, undefined, 312]}><boxGeometry args={[.408, .378, .038]} /><meshPhysicalMaterial vertexColors transparent opacity={.052} roughness={.16} metalness={.35} clearcoat={.25} /></instancedMesh></group> }
-
-function makeScreenTexture(title: string, icon: string, summary: string[], detail: string[], focused: boolean, accent: string) { const canvas = document.createElement('canvas'); canvas.width = 2280; canvas.height = 1500; const ctx = canvas.getContext('2d')!; ctx.scale(3, 3); ctx.fillStyle = '#102a38'; ctx.fillRect(0, 0, 760, 500); ctx.fillStyle = accent; ctx.fillRect(0, 0, 760, 26); ctx.strokeStyle = '#d5b261'; ctx.lineWidth = 9; ctx.strokeRect(6, 6, 748, 488); ctx.fillStyle = '#eaf4ef'; ctx.font = '700 34px "Arial Black", Arial, sans-serif'; ctx.fillText(`${icon}  ${title}`, 38, 76); ctx.fillStyle = '#8dd2c8'; ctx.font = '700 17px "Arial Black", Arial, sans-serif'; ctx.fillText(focused ? 'FOCUSED GLASS RECORD' : 'TAP TO FOCUS', 40, 110); const values = focused ? detail : summary; ctx.fillStyle = '#dbe9e2'; ctx.font = '600 21px "Arial Black", Arial, sans-serif'; let y = 164; values.flatMap((value) => value.match(/.{1,42}(?:\s|$)/g) ?? [value]).slice(0, 8).forEach((line) => { ctx.fillText(line.trim(), 40, y); y += 34 }); ctx.fillStyle = '#d5b261'; ctx.font = '600 16px "Arial Black", Arial, sans-serif'; ctx.fillText(focused ? 'ESC / TAP EMPTY SPACE TO RETURN' : 'GLASS SCREEN · READY', 40, 458); const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; texture.magFilter = THREE.LinearFilter; texture.minFilter = THREE.LinearMipmapLinearFilter; return texture }
-function WorldScreen3D({ id, language, run, mission, course, focusState, activeId, onFocus }: { id: ScreenId; language: Language; run: RunState; mission: MissionEvent; course: MicroCourse; focusState: ScreenFocusState; activeId: ScreenId | null; onFocus: (id: ScreenId) => void }) { const config = id === 'event' ? { position: [-3.18, 1.48, -1.48] as [number, number, number], rotation: [0, .34, 0] as [number, number, number], scale: .5, accent: '#80b4c8', icon: '◉', title: language === 'zh' ? '地球／通訊' : 'EARTH / COMMS', summary: language === 'zh' ? [`通訊 ${run.comms} · 證據 ${run.evidence}`, '點擊查看任務線索。'] : [`COMMS ${run.comms} · EVIDENCE ${run.evidence}`, 'Tap for the mission clue.'], detail: language === 'zh' ? [course.clue.zh, `記錄來源：${course.sourceRefs[0]}`, `選擇：${course.choices[0].label.zh} 或 ${course.choices[1].label.zh}`, '資源點是教育模型。'] : [course.clue.en, `SOURCE: ${course.sourceRefs[0]}`, `CHOICE: ${course.choices[0].label.en} / ${course.choices[1].label.en}`, 'Resource values are a learning model.'] } : id === 'outpost' ? { position: [0, 2.28, -2.06] as [number, number, number], rotation: [0, 0, 0] as [number, number, number], scale: .56, accent: '#5aa7a4', icon: '⌂', title: language === 'zh' ? '月球／目前任務' : 'MOON / MISSION', summary: language === 'zh' ? ['NASA DONKI 歷史快照', '點擊查看事件與資源。'] : ['NASA DONKI archive snapshot', 'Tap for event and resources.'], detail: language === 'zh' ? [`DONKI CME · ${mission.record.startTime}`, `速度 ${mission.speed} km/s`, `護盾 ${run.resources.shield} / 目標 ${mission.shieldTarget}`, `電力 ${run.resources.power} · 生命維持 ${run.resources.lifeSupport}`] : [`DONKI CME · ${mission.record.startTime}`, `${mission.speed} km/s analysis`, `SHIELD ${run.resources.shield} / TARGET ${mission.shieldTarget}`, `POWER ${run.resources.power} · LIFE ${run.resources.lifeSupport}`] } : { position: [3.18, 1.48, -1.48] as [number, number, number], rotation: [0, -.34, 0] as [number, number, number], scale: .5, accent: '#c86e5c', icon: '◇', title: language === 'zh' ? '火星／思考課程' : 'MARS / THINK LAB', summary: language === 'zh' ? [course.learningGoal.zh, '點擊看兩個可重玩的選擇。'] : [course.learningGoal.en, 'Tap for two replayable choices.'], detail: language === 'zh' ? [`${course.choices[0].label.zh}：${course.choices[0].effect.zh}`, `${course.choices[1].label.zh}：${course.choices[1].effect.zh}`, `反思：${course.reflectionPrompt.zh}`, `收藏 ${run.played.length}/8 張卡`] : [`${course.choices[0].label.en}: ${course.choices[0].effect.en}`, `${course.choices[1].label.en}: ${course.choices[1].effect.en}`, `REFLECT: ${course.reflectionPrompt.en}`, `ARCHIVED ${run.played.length}/8 CARDS`] }; const focused = focusState === 'focused' && activeId === id; const targeting = activeId === id && focusState !== 'overview'; const contentKey = `${config.title}\u0000${config.icon}\u0000${config.summary.join('\u0000')}\u0000${config.detail.join('\u0000')}\u0000${focused}\u0000${config.accent}`; const texture = useMemo(() => makeScreenTexture(config.title, config.icon, config.summary, config.detail, focused, config.accent), [contentKey]); useEffect(() => () => texture.dispose(), [texture]); const frameTiles = useMemo(() => Array.from({ length: 18 }, (_, index) => { const horizontal = index < 12; const row = index < 6 ? 1 : index < 12 ? -1 : 0; return horizontal ? { x: -1.5 + (index % 6) * .6, y: row * 1.48, w: .48, h: .14 } : { x: index % 2 ? 1.98 : -1.98, y: -.96 + Math.floor((index - 12) / 2) * .76, w: .14, h: .58 } }), []); return <group position={config.position} rotation={config.rotation} scale={[config.scale, config.scale, config.scale]} onClick={(event) => { event.stopPropagation(); onFocus(id) }}><mesh castShadow receiveShadow position={[0, 0, -.1]}><boxGeometry args={[4.42, 3.5, .24]} /><meshPhysicalMaterial color="#173944" metalness={.62} roughness={.22} clearcoat={.58} clearcoatRoughness={.14} emissive={targeting ? config.accent : '#07131b'} emissiveIntensity={targeting ? .22 : .06} /></mesh>{frameTiles.map((tile, index) => <mesh castShadow key={index} position={[tile.x, tile.y, .06]}><boxGeometry args={[tile.w, tile.h, .15]} /><meshPhysicalMaterial color={index % 3 === 0 ? config.accent : '#d5b261'} roughness={.26} metalness={.55} /></mesh>)}<mesh position={[0, 0, .12]}><planeGeometry args={[3.78, 2.82]} /><meshBasicMaterial map={texture} /></mesh><mesh position={[0, 0, .135]}><planeGeometry args={[3.8, 2.84]} /><meshPhysicalMaterial color={config.accent} transparent opacity={.04} roughness={.08} metalness={.25} /></mesh><mesh castShadow position={[0, -1.92, -.16]}><boxGeometry args={[.3, .72, .3]} /><meshStandardMaterial color="#264651" metalness={.72} roughness={.32} /></mesh><mesh castShadow position={[0, -2.18, -.1]} rotation={[-.16, 0, 0]}><boxGeometry args={[2.22, .16, 1.2]} /><meshStandardMaterial color="#284955" metalness={.65} roughness={.36} /></mesh><mesh position={[0, -1.54, .02]}><boxGeometry args={[.18, .18, .16]} /><meshStandardMaterial color={config.accent} emissive={config.accent} emissiveIntensity={targeting ? .7 : .24} /></mesh><mesh position={[0, -2.28, .48]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[1.12, 24]} /><meshBasicMaterial color="#071019" transparent opacity={.24} depthWrite={false} /></mesh></group> }
-function Planet({ name, position, color, accent, scale = 1, onFocus }: { name: PlanetName; position: [number, number, number]; color: string; accent: string; scale?: number; onFocus: (name: PlanetName) => void }) { const ref = useRef<THREE.Group>(null); const radius = name === 'EARTH' ? 1.02 : name === 'MARS' ? .72 : .6; const voxels = useMemo(() => Array.from({ length: 18 }, (_, index) => { const theta = index * 2.4; const phi = .45 + ((index * 1.37) % 2.1); return [Math.sin(phi) * Math.cos(theta) * radius, Math.cos(phi) * radius, Math.sin(phi) * Math.sin(theta) * radius] as [number, number, number] }), [radius]); useFrame((state) => { if (ref.current) ref.current.rotation.y = state.clock.elapsedTime * .08 }); return <group ref={ref} position={position} scale={scale} onClick={(event) => { event.stopPropagation(); onFocus(name) }}><mesh><icosahedronGeometry args={[radius, 1]} /><meshStandardMaterial color={color} emissive={accent} emissiveIntensity={.1} flatShading roughness={.88} /></mesh>{voxels.map((voxel, index) => <mesh key={index} position={voxel} rotation={[index * .4, index * .7, 0]}><boxGeometry args={[radius * .22, radius * .15, radius * .16]} /><meshStandardMaterial color={index % 3 === 0 ? accent : color} emissive={accent} emissiveIntensity={index % 3 === 0 ? .18 : .03} flatShading /></mesh>)}<mesh rotation={[.4, .8, 0]} scale={[1.04, 1.04, 1.04]}><icosahedronGeometry args={[radius, 1]} /><meshBasicMaterial color={accent} wireframe transparent opacity={.12} /></mesh></group> }
-function Desk({ onInspect, inspectReady }: { onInspect: () => void; inspectReady: boolean }) { const inlay = useMemo(() => Array.from({ length: 18 }, (_, index) => ({ x: -3.32 + (index % 9) * .83, z: index < 9 ? -1.78 : 1.78 })), []); return <group onClick={(event) => { if (!inspectReady) return; event.stopPropagation(); onInspect() }}><mesh castShadow receiveShadow position={[0, 0, 0]}><boxGeometry args={[8.2, .56, 4.6]} /><meshStandardMaterial color="#59696b" metalness={.68} roughness={.36} /></mesh><mesh receiveShadow position={[0, .31, 0]}><boxGeometry args={[7.84, .08, 4.19]} /><meshPhysicalMaterial color="#e9e6da" roughness={.54} clearcoat={.16} /></mesh><mesh position={[0, .38, -1.55]} rotation={[-.18, 0, 0]}><boxGeometry args={[3.2, .08, 1.25]} /><meshPhysicalMaterial color="#bcd6dc" emissive={inspectReady ? '#d5b261' : '#bcd6dc'} emissiveIntensity={inspectReady ? .65 : .22} metalness={.15} roughness={.32} clearcoat={.28} /></mesh><mesh position={[0, .39, .02]}><boxGeometry args={[5.86, .025, .04]} /><meshStandardMaterial color="#bb9250" metalness={.72} roughness={.3} /></mesh>{inlay.map((tile, index) => <mesh key={index} position={[tile.x, .38, tile.z]}><boxGeometry args={[.48, .026, .06]} /><meshStandardMaterial color={index % 3 === 0 ? '#d5b261' : '#82b7b1'} emissive={inspectReady && index % 3 === 0 ? '#d5b261' : '#000000'} emissiveIntensity={inspectReady ? .24 : 0} /></mesh>)}</group> }
-function drawPixelIcon(ctx: CanvasRenderingContext2D, symbol: string, color: string) { ctx.fillStyle = color; const cell = 24; const pattern = symbol === '⚡' ? [[2,0],[1,1],[2,1],[1,2],[0,3]] : symbol === '◇' ? [[1,0],[0,1],[2,1],[1,2]] : symbol === '◉' ? [[1,0],[0,1],[1,1],[2,1],[1,2]] : symbol === '⌁' ? [[0,1],[1,0],[2,1],[3,0]] : symbol === '↔' ? [[0,1],[1,1],[2,1],[0,0],[0,2],[2,0],[2,2]] : [[1,0],[0,1],[1,1],[2,1],[1,2]]; pattern.forEach(([x, y]) => ctx.fillRect(108 + x * cell, 98 + y * cell, cell - 3, cell - 3)) }
-function makeCardTexture(card: CardDefinition, language: Language, selected: boolean, unavailable: boolean) { const canvas = document.createElement('canvas'); canvas.width = 1140; canvas.height = 1590; const ctx = canvas.getContext('2d')!; ctx.scale(3, 3); const palette = card.id === 'radiation-shield' ? '#d76f5d' : card.id === 'power-route' ? '#c49c4f' : '#5d9c9b'; ctx.fillStyle = unavailable ? '#b7b9b3' : '#f7f2e8'; ctx.fillRect(0, 0, 380, 530); ctx.fillStyle = palette; ctx.fillRect(0, 0, 380, 26); ctx.strokeStyle = selected ? '#c39b4a' : '#52656a'; ctx.lineWidth = selected ? 12 : 6; ctx.strokeRect(5, 5, 370, 520); drawPixelIcon(ctx, card.symbol, palette); ctx.fillStyle = '#597075'; ctx.font = '600 16px sans-serif'; ctx.fillText(text(card.category, language), 30, 55); ctx.fillStyle = '#17333b'; ctx.font = '700 30px sans-serif'; ctx.fillText(text(card.title, language), 30, 230); ctx.fillStyle = '#496169'; ctx.font = '500 17px sans-serif'; const effect = text(card.shortEffect, language); const lines = effect.match(/.{1,19}(\s|$)/g) ?? [effect]; lines.slice(0, 2).forEach((line, index) => ctx.fillText(line.trim(), 30, 278 + index * 26)); ctx.fillStyle = '#17333b'; ctx.fillRect(30, 443, 320, 1); ctx.fillStyle = '#8f6540'; ctx.font = '700 19px sans-serif'; const cost = (Object.entries(card.cost) as [ResourceKey, number][]).map(([key, value]) => `${resources[key].icon} ${value}`).join('  ') || '—'; ctx.fillText(cost, 30, 486); ctx.fillStyle = unavailable ? '#777f7e' : '#527a74'; ctx.font = '600 14px sans-serif'; ctx.fillText(unavailable ? (language === 'zh' ? '已使用' : 'ARCHIVED') : (language === 'zh' ? '查看詳情' : 'VIEW DETAILS'), 222, 486); const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; texture.magFilter = THREE.LinearFilter; texture.minFilter = THREE.LinearMipmapLinearFilter; return texture }
-function CardMesh({ card, index, language, selected, detailState, hovered, disabled, onSelect, onHover }: { card: CardDefinition; index: number; language: Language; selected: boolean; detailState: CardDetailState; hovered: boolean; disabled: boolean; onSelect: (id: string) => void; onHover: (id: string | null) => void }) { const ref = useRef<THREE.Group>(null); const { size } = useThree(); const compact = size.width < 640; const targetPosition = useMemo(() => new THREE.Vector3(), []); const targetScaleVector = useMemo(() => new THREE.Vector3(), []); const texture = useMemo(() => makeCardTexture(card, language, selected, disabled), [card, language, selected, disabled]); useEffect(() => () => texture.dispose(), [texture]); const row = compact ? Math.floor(index / 4) : 0; const x = compact ? (index % 4 - 1.5) * .8 : (index - 3.5) * .94; const restingY = compact ? 1.04 + (1 - row) * .96 : .98; const baseScale = compact ? .85 : 1.13; useFrame(() => { if (!ref.current) return; const expanded = selected && detailState === 'expanded'; const moving = selected && detailState === 'moving'; const lifting = selected && detailState === 'lifting'; if (expanded) targetPosition.set(compact ? -.28 : -.62, compact ? 2.25 : 1.72, compact ? 2.1 : 2.35); else if (moving) targetPosition.set(x * .34, restingY + .76, 1.38); else if (lifting) targetPosition.set(x, restingY + .38, .76); else targetPosition.set(x, hovered ? restingY + .18 : restingY, .64); const targetScale = expanded ? baseScale * (compact ? 1.5 : 1.92) : moving ? baseScale * 1.22 : baseScale; targetScaleVector.setScalar(targetScale); ref.current.position.lerp(targetPosition, expanded ? .12 : .18); ref.current.scale.lerp(targetScaleVector, .14); ref.current.rotation.z = THREE.MathUtils.lerp(ref.current.rotation.z, expanded ? 0 : hovered ? (index - 3.5) * .012 : (index - 3.5) * .025, .14); ref.current.rotation.y = THREE.MathUtils.lerp(ref.current.rotation.y, expanded ? -.08 : 0, .12) }); return <group ref={ref} position={[x, restingY, .64]} scale={[baseScale, baseScale, baseScale]} rotation={[0, 0, (index - 3.5) * .025]} onPointerOver={(event) => { event.stopPropagation(); onHover(card.id) }} onPointerOut={() => onHover(null)} onClick={(event) => { event.stopPropagation(); if (!disabled) onSelect(card.id) }}><mesh castShadow><boxGeometry args={[.86, 1.18, .12]} /><meshStandardMaterial color={disabled ? '#9ca2a0' : '#f8f2e8'} metalness={.2} roughness={.5} /></mesh><mesh position={[0, 0, .068]}><planeGeometry args={[.76, 1.06]} /><meshBasicMaterial map={texture} side={THREE.DoubleSide} /></mesh><mesh position={[0, 0, -.068]} rotation={[0, Math.PI, 0]}><planeGeometry args={[.76, 1.06]} /><meshBasicMaterial color={disabled ? '#788486' : '#17333b'} /></mesh></group> }
-
-function makeWorldPanelTexture(title: string, lines: string[]) { const canvas = document.createElement('canvas'); canvas.width = 2280; canvas.height = 1680; const ctx = canvas.getContext('2d')!; ctx.scale(3, 3); ctx.fillStyle = '#0b1d2a'; ctx.fillRect(0, 0, 760, 560); ctx.strokeStyle = '#d5b261'; ctx.lineWidth = 10; ctx.strokeRect(8, 8, 744, 544); ctx.fillStyle = '#5aa7a4'; ctx.fillRect(28, 34, 704, 42); ctx.fillStyle = '#f4f4e8'; ctx.font = '700 34px "Arial Black", Arial, sans-serif'; ctx.fillText(title, 42, 64); ctx.fillStyle = '#dce9e2'; ctx.font = '600 23px "Arial Black", Arial, sans-serif'; const wrap = (value: string) => value.match(/.{1,43}(?:\s|$)/g) ?? [value]; let y = 122; lines.flatMap(wrap).slice(0, 13).forEach((line) => { ctx.fillText(line.trim(), 42, y); y += 31 }); ctx.fillStyle = '#8dd2c8'; ctx.font = '600 18px "Arial Black", Arial, sans-serif'; ctx.fillText('ESC / TAP EMPTY SPACE TO RETURN', 42, 520); const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; texture.magFilter = THREE.LinearFilter; texture.minFilter = THREE.LinearMipmapLinearFilter; return texture }
-function makeDetailStripTexture(card: CardDefinition, language: Language, mission: MissionEvent) { const canvas = document.createElement('canvas'); canvas.width = 2400; canvas.height = 510; const ctx = canvas.getContext('2d')!; ctx.scale(3, 3); const title = text(card.title, language); const cost = (Object.entries(card.cost) as [ResourceKey, number][]).map(([key, value]) => `${resources[key].label[language]} -${value}`).join(' · ') || (language === 'zh' ? '無成本' : 'NO COST'); const truncate = (value: string, count: number) => Array.from(value).length > count ? `${Array.from(value).slice(0, count - 1).join('')}…` : value; ctx.fillStyle = '#0a1c29'; ctx.fillRect(0, 0, 800, 170); ctx.fillStyle = '#5aa7a4'; ctx.fillRect(0, 0, 800, 10); ctx.strokeStyle = '#d5b261'; ctx.lineWidth = 5; ctx.strokeRect(4, 4, 792, 162); ctx.fillStyle = '#f4f4e8'; ctx.font = '700 25px "Arial Black", Arial, sans-serif'; ctx.fillText(language === 'zh' ? `展品資料｜${title}` : `EXHIBIT RECORD | ${title}`, 28, 42); ctx.fillStyle = '#b8d7d0'; ctx.font = '600 15px "Arial Black", Arial, sans-serif'; ctx.fillText(truncate(text(card.detail, language), 85), 28, 67); const columns = [{ label: language === 'zh' ? '成本' : 'COST', value: cost }, { label: language === 'zh' ? 'NASA 來源' : 'NASA SOURCE', value: `DONKI ${mission.record.activityID}` }, { label: language === 'zh' ? '限制' : 'LIMIT', value: text(card.limitations, language) }]; columns.forEach((column, index) => { const x = 28 + index * 252; ctx.fillStyle = '#d5b261'; ctx.font = '700 14px "Arial Black", Arial, sans-serif'; ctx.fillText(column.label, x, 99); ctx.fillStyle = '#e5efe9'; ctx.font = '600 14px Arial, sans-serif'; ctx.fillText(truncate(column.value, 27), x, 122); ctx.fillStyle = '#44636c'; ctx.fillRect(x, 136, 220, 2) }); ctx.fillStyle = '#8dd2c8'; ctx.font = '600 13px "Arial Black", Arial, sans-serif'; ctx.fillText(language === 'zh' ? '點空白處或按 ESC 收起詳情' : 'TAP EMPTY SPACE OR ESC TO RETURN', 28, 154); const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; texture.magFilter = THREE.LinearFilter; texture.minFilter = THREE.LinearMipmapLinearFilter; return texture }
-function DetailPlaque3D({ card, language, mission, detailState }: { card: CardDefinition; language: Language; mission: MissionEvent; detailState: CardDetailState }) { const { size } = useThree(); const compact = size.width < 640; const texture = useMemo(() => makeDetailStripTexture(card, language, mission), [card, language, mission]); useEffect(() => () => texture.dispose(), [texture]); const visible = detailState === 'moving' || detailState === 'expanded'; return <group visible={visible} position={compact ? [0, .38, 2.2] : [0, .32, 2.32]} scale={compact ? [.49, .49, .49] : [.84, .84, .84]}><mesh castShadow><boxGeometry args={[8.04, 1.74, .16]} /><meshPhysicalMaterial color="#102d39" metalness={.54} roughness={.28} clearcoat={.42} /></mesh><mesh position={[0, 0, .095]}><planeGeometry args={[7.86, 1.56]} /><meshBasicMaterial map={texture} /></mesh><mesh position={[0, -1.02, -.02]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[3.7, 24]} /><meshBasicMaterial color="#061019" transparent opacity={.2} depthWrite={false} /></mesh></group> }
-
-function ReplayConsole3D({ language, onReplay, onNewEvent }: { language: Language; onReplay: () => void; onNewEvent: () => void }) { const { size } = useThree(); const compact = size.width < 640; const texture = useMemo(() => makeWorldPanelTexture(language === 'zh' ? '任務結算' : 'MISSION COMPLETE', [language === 'zh' ? '自由重玩，或換一筆 NASA 事件。' : 'Replay freely, or try another NASA event.']), [language]); useEffect(() => () => texture.dispose(), [texture]); const position: [number, number, number] = compact ? [0, 3.5, -1.4] : [0, 1.55, 1.15]; return <group position={position} scale={compact ? [.62, .62, .62] : [.9, .9, .9]}><mesh><boxGeometry args={[4.5, 2.8, .18]} /><meshStandardMaterial color="#17313e" /></mesh><mesh position={[0, .26, .11]}><planeGeometry args={[4.15, 2.05]} /><meshBasicMaterial map={texture} /></mesh><group position={[-1.05, -.88, .16]} onClick={(event) => { event.stopPropagation(); onReplay() }}><mesh><boxGeometry args={[1.6, .42, .18]} /><meshStandardMaterial color="#5aa7a4" emissive="#3e7775" emissiveIntensity={.25} /></mesh></group><group position={[1.05, -.88, .16]} onClick={(event) => { event.stopPropagation(); onNewEvent() }}><mesh><boxGeometry args={[1.6, .42, .18]} /><meshStandardMaterial color="#d5b261" emissive="#8f6e32" emissiveIntensity={.2} /></mesh></group></group> }
-function ResourcePillars3D({ run }: { run: RunState }) { const items = Object.keys(resources) as ResourceKey[]; return <group position={[3.95, .35, -.2]}>{items.map((key, index) => <group key={key} position={[index * .5 - .5, 0, 0]}>{Array.from({ length: 6 }, (_, block) => <mesh key={block} position={[0, block * .16, 0]}><boxGeometry args={[.26, .13, .26]} /><meshStandardMaterial color={block < run.resources[key] ? key === 'power' ? '#d5b261' : key === 'shield' ? '#c86e5c' : '#5aa7a4' : '#213746'} /></mesh>)}</group>)}</group> }
-function makeDialLabelTexture(language: Language) { const canvas = document.createElement('canvas'); canvas.width = 1200; canvas.height = 360; const ctx = canvas.getContext('2d')!; ctx.scale(3, 3); ctx.fillStyle = '#102a38'; ctx.fillRect(0, 0, 400, 120); ctx.strokeStyle = '#d5b261'; ctx.lineWidth = 5; ctx.strokeRect(4, 4, 392, 112); ctx.fillStyle = '#eff4e9'; ctx.font = '700 20px "Arial Black", Arial, sans-serif'; ctx.fillText('LANGUAGE DIAL', 82, 34); ctx.fillStyle = '#8dd2c8'; ctx.font = '700 30px "Arial Black", Arial, sans-serif'; ctx.fillText(language === 'en' ? 'EN  ◉  繁中' : 'EN  ●  繁中', 83, 80); ctx.fillStyle = '#d5b261'; ctx.font = '700 14px "Arial Black", Arial, sans-serif'; ctx.fillText('TAP / ENTER', 136, 104); const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; texture.magFilter = THREE.LinearFilter; texture.minFilter = THREE.LinearMipmapLinearFilter; return texture }
-function LanguageDial3D({ language, onToggle, focused }: { language: Language; onToggle: () => void; focused: boolean }) { const [pressed, setPressed] = useState(false); const dial = useRef<THREE.Group>(null); const label = useMemo(() => makeDialLabelTexture(language), [language]); useEffect(() => () => label.dispose(), [label]); useEffect(() => { if (!pressed) return; const timer = window.setTimeout(() => setPressed(false), 180); return () => window.clearTimeout(timer) }, [pressed]); useFrame(() => { if (dial.current) dial.current.position.y = THREE.MathUtils.lerp(dial.current.position.y, pressed ? .12 : .22, .26) }); return <group position={[3.18, .43, 1.72]} rotation={[0, -.17, 0]} onClick={(event) => { event.stopPropagation(); setPressed(true); onToggle() }}><mesh castShadow position={[0, .02, 0]}><cylinderGeometry args={[.62, .7, .12, 20]} /><meshStandardMaterial color="#264752" metalness={.7} roughness={.28} /></mesh><group ref={dial} position={[0, .22, 0]}><mesh castShadow><cylinderGeometry args={[.46, .49, .18, 16]} /><meshPhysicalMaterial color="#d5b261" metalness={.78} roughness={.2} clearcoat={.35} /></mesh><mesh position={[language === 'en' ? -.19 : .19, .11, 0]}><boxGeometry args={[.11, .04, .38]} /><meshStandardMaterial color="#0c2733" emissive="#8dd2c8" emissiveIntensity={focused || pressed ? 1.1 : .3} /></mesh></group><mesh position={[0, .34, -.5]} rotation={[-.44, 0, 0]}><planeGeometry args={[1.12, .34]} /><meshBasicMaterial map={label} /></mesh><mesh position={[0, -.045, .02]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[.82, 20]} /><meshBasicMaterial color={focused ? '#8dd2c8' : '#0b1820'} transparent opacity={focused ? .45 : .22} /></mesh></group> }
-function DeskViewArrow3D({ direction, onTurn }: { direction: 'left' | 'right'; onTurn: () => void }) { const x = direction === 'left' ? -3.78 : 3.78; return <group position={[x, .49, 1.72]} rotation={[0, direction === 'left' ? .2 : -.2, 0]} onClick={(event) => { event.stopPropagation(); onTurn() }}><mesh castShadow><cylinderGeometry args={[.3, .34, .14, 6]} /><meshStandardMaterial color="#23434f" metalness={.72} roughness={.32} /></mesh><mesh position={[0, .13, 0]} rotation={[0, 0, direction === 'left' ? Math.PI / 2 : -Math.PI / 2]}><coneGeometry args={[.16, .28, 3]} /><meshStandardMaterial color="#d5b261" emissive="#d5b261" emissiveIntensity={.42} /></mesh></group> }
-function RoomScene({ language, selected, detailState, screenId, screenFocus, viewYaw, hovered, played, protectedRoom, focus, run, mission, onFocus, onSelect, onCloseDetail, onFocusScreen, onCloseScreen, onHover, onToggleLanguage, reducedMotion, compact, onReplay, onNewEvent }: { language: Language; selected: string | null; detailState: CardDetailState; screenId: ScreenId | null; screenFocus: ScreenFocusState; viewYaw: number; hovered: string | null; played: string[]; protectedRoom: boolean; focus: PlanetName | null; run: RunState; mission: MissionEvent; onFocus: (name: PlanetName | null) => void; onSelect: (id: string) => void; onCloseDetail: () => void; onFocusScreen: (id: ScreenId) => void; onCloseScreen: () => void; onHover: (id: string | null) => void; onToggleLanguage: () => void; reducedMotion: boolean; compact: boolean; onReplay: () => void; onNewEvent: () => void }) {
-  const current = cards.find((item) => item.id === selected) ?? null
-  const course = microCourses.find((item) => item.eventId === mission.record.activityID) ?? microCourses[0]
-  const [tutorial, setTutorial] = useState<TutorialStep>(() => localStorage.getItem('glass-orbit-onboarding-v1') === 'done' ? 'complete' : 'room')
-  const [localYaw, setLocalYaw] = useState(viewYaw)
-  const [languageFocused, setLanguageFocused] = useState(false)
-  const previousSelected = useRef<string | null>(selected)
-  const previousPlayed = useRef(run.played.length)
-  useEffect(() => { setLocalYaw(viewYaw) }, [viewYaw])
-  const finishTutorial = (next: TutorialStep) => { setTutorial(next); if (next === 'complete' || next === 'skipped') localStorage.setItem('glass-orbit-onboarding-v1', 'done') }
-  const inspectRoom = () => { if (tutorial === 'room') setTutorial('look') }
-  const turn = (direction: 'left' | 'right') => { if (screenId || selected || focus) return; setLocalYaw((value) => THREE.MathUtils.clamp(value + (direction === 'left' ? -.18 : .18), -1, 1)); if (tutorial === 'look') setTutorial('language') }
-  const toggleLanguage = () => { onToggleLanguage(); if (tutorial === 'language') setTutorial('screen') }
-  const returnFromScreen = () => { onCloseScreen(); if (tutorial === 'screen') window.setTimeout(() => setTutorial('card'), reducedMotion ? 0 : 650) }
-  const skipTutorial = () => finishTutorial('skipped')
-  const replayTutorial = () => { localStorage.removeItem('glass-orbit-onboarding-v1'); setTutorial('room'); setLocalYaw(0) }
-  useEffect(() => { if (tutorial === 'card' && previousSelected.current && !selected) setTutorial('play'); previousSelected.current = selected }, [selected, tutorial])
-  useEffect(() => { if (tutorial === 'play' && run.played.length > previousPlayed.current) finishTutorial('complete'); previousPlayed.current = run.played.length }, [run.played.length, tutorial])
-  useEffect(() => { const keydown = (event: KeyboardEvent) => { const target = event.target as HTMLElement | null; if (target?.matches('input, textarea, select, [contenteditable="true"]') || screenId || selected || focus) return; if (event.code === 'ArrowLeft' || event.code === 'KeyA') { event.preventDefault(); turn('left') } if (event.code === 'ArrowRight' || event.code === 'KeyD') { event.preventDefault(); turn('right') } }; window.addEventListener('keydown', keydown); return () => window.removeEventListener('keydown', keydown) }, [screenId, selected, focus, tutorial])
-  return <><Canvas className="orbit-canvas" shadows dpr={compact ? 1.25 : 1.5} gl={{ antialias: true, powerPreference: 'high-performance' }} camera={{ position: [0, 3.2, 10], fov: 43 }} onCreated={({ gl }) => { gl.toneMapping = THREE.ACESFilmicToneMapping; gl.toneMappingExposure = 1.06; gl.outputColorSpace = THREE.SRGBColorSpace; gl.shadowMap.enabled = true; gl.shadowMap.type = THREE.PCFSoftShadowMap }} onPointerMissed={() => { onFocus(null); if (tutorial === 'room') inspectRoom(); else if (screenId) returnFromScreen(); else if (current) onCloseDetail() }}><color attach="background" args={['#071125']} /><fog attach="fog" args={['#071125', 9, 23]} /><ambientLight intensity={.22} color="#d8e9e8" /><hemisphereLight args={['#6d88a2', '#5c4c36', .92]} /><directionalLight position={[-5, 7, 4]} intensity={1.9} color="#fff0cf" castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-bias={-.0005} shadow-normalBias={.02} /><pointLight position={[4, 3, 2]} intensity={16} distance={13} color="#4d8f9f" /><pointLight position={[-3, 2.2, 1.4]} intensity={5} distance={6} color="#d5b261" /><CameraRig focus={focus} reducedMotion={reducedMotion} screenId={screenId} screenFocus={screenFocus} viewYaw={localYaw} /><PixelStars /><MuseumRoom protectedRoom={protectedRoom} /><MosaicGlassTiles /><Planet name="EARTH" position={compact ? [-1.25, 4.72, -3.4] : [-3.9, 2.45, -2.4]} color="#17628e" accent="#52b8b1" scale={compact ? .42 : 1} onFocus={onFocus} /><Planet name="MOON" position={compact ? [0, 4.92, -4] : [0, 3.35, -3.8]} color="#aab3b6" accent="#dce6e3" scale={compact ? .42 : 1} onFocus={onFocus} /><Planet name="MARS" position={compact ? [1.25, 4.72, -3.8] : [4.4, 2.52, -3.8]} color="#a84e38" accent="#d98558" scale={compact ? .42 : 1} onFocus={onFocus} /><Desk onInspect={inspectRoom} inspectReady={tutorial === 'room'} /><WorldScreen3D id="event" language={language} run={run} mission={mission} course={course} focusState={screenFocus} activeId={screenId} onFocus={onFocusScreen} /><WorldScreen3D id="outpost" language={language} run={run} mission={mission} course={course} focusState={screenFocus} activeId={screenId} onFocus={onFocusScreen} /><WorldScreen3D id="field" language={language} run={run} mission={mission} course={course} focusState={screenFocus} activeId={screenId} onFocus={onFocusScreen} /><ResourcePillars3D run={run} /><LanguageDial3D language={language} onToggle={toggleLanguage} focused={languageFocused || tutorial === 'language'} /><DeskViewArrow3D direction="left" onTurn={() => turn('left')} /><DeskViewArrow3D direction="right" onTurn={() => turn('right')} /><TutorialBeacon3D language={language} step={tutorial} onInspectRoom={inspectRoom} onSkip={skipTutorial} onReplay={replayTutorial} />{current && <DetailPlaque3D card={current} language={language} mission={mission} detailState={detailState} />}{run.outcome !== 'playing' && <ReplayConsole3D language={language} onReplay={onReplay} onNewEvent={onNewEvent} />}{cards.map((item, index) => <CardMesh key={item.id} card={item} index={index} language={language} selected={selected === item.id} detailState={detailState} hovered={hovered === item.id} disabled={played.includes(item.id)} onSelect={onSelect} onHover={onHover} />)}</Canvas><div className="scene-a11y-controls" aria-label="Glass Orbit scene controls"><button onClick={() => turn('left')}>Look left</button><button onClick={() => turn('right')}>Look right</button><button onFocus={() => setLanguageFocused(true)} onBlur={() => setLanguageFocused(false)} onClick={toggleLanguage}>Toggle language</button><button onClick={tutorial === 'complete' || tutorial === 'skipped' ? replayTutorial : skipTutorial}>{tutorial === 'complete' || tutorial === 'skipped' ? 'Replay tutorial' : 'Skip tutorial'}</button></div></>
-}
-
 function App() {
-  const [language, setLanguage] = useState<Language>(() => localStorage.getItem('glass-orbit-locale') === 'zh' ? 'zh' : 'en')
-  const [started, setStarted] = useState(true); const [seed, setSeed] = useState(0); const event = missionEvents[seed]
-  const [run, setRun] = useState<RunState>(() => initialRun(missionEvents[0])); const [previous, setPrevious] = useState<RunState | null>(null)
-  const [selectedId, setSelectedId] = useState<string | null>(null); const [detailState, setDetailState] = useState<CardDetailState>('closed')
-  const [screenId, setScreenId] = useState<ScreenId | null>(null); const [screenFocus, setScreenFocus] = useState<ScreenFocusState>('overview'); const [viewYaw, setViewYaw] = useState(0)
-  const [hoveredId, setHoveredId] = useState<string | null>(null); const [sourceOpen, setSourceOpen] = useState(false); const [focus, setFocus] = useState<PlanetName | null>(null)
-  const [reducedMotion, setReducedMotion] = useState(false); const [compact, setCompact] = useState(() => window.innerWidth < 640); const returnTimer = useRef<number | null>(null); const screenTimers = useRef<number[]>([])
-  const closeDetail = () => { if (!selectedId) return; if (returnTimer.current) window.clearTimeout(returnTimer.current); setDetailState('returning'); returnTimer.current = window.setTimeout(() => { setSelectedId(null); setDetailState('closed') }, reducedMotion ? 0 : 460) }
-  const clearScreenTimers = () => { screenTimers.current.forEach((timer) => window.clearTimeout(timer)); screenTimers.current = [] }
-  const focusScreen = (id: ScreenId) => { if (screenFocus !== 'overview') return; clearScreenTimers(); setScreenId(id); setScreenFocus(reducedMotion ? 'focused' : 'targeting'); if (reducedMotion) return; const dolly = window.setTimeout(() => setScreenFocus('dollyIn'), 120); const focused = window.setTimeout(() => { setScreenFocus('focused'); screenTimers.current = [] }, 650); screenTimers.current = [dolly, focused] }
-  const closeScreenFocus = () => { if (!screenId || screenFocus === 'returning') return; clearScreenTimers(); setScreenFocus('returning'); const returned = window.setTimeout(() => { setScreenFocus('overview'); setScreenId(null); screenTimers.current = [] }, reducedMotion ? 0 : 620); screenTimers.current = [returned] }
-  useEffect(() => { const media = window.matchMedia('(prefers-reduced-motion: reduce)'); const sync = () => setReducedMotion(media.matches); sync(); media.addEventListener('change', sync); return () => media.removeEventListener('change', sync) }, [])
-  useEffect(() => { const sync = () => setCompact(window.innerWidth < 640); window.addEventListener('resize', sync); return () => window.removeEventListener('resize', sync) }, [])
-  useEffect(() => { if (!selectedId) { setDetailState('closed'); return } if (returnTimer.current) window.clearTimeout(returnTimer.current); setDetailState(reducedMotion ? 'expanded' : 'lifting'); if (reducedMotion) return; const moving = window.setTimeout(() => setDetailState('moving'), 120); const expanded = window.setTimeout(() => setDetailState('expanded'), 430); return () => { window.clearTimeout(moving); window.clearTimeout(expanded) } }, [selectedId, reducedMotion])
-  useEffect(() => { const onKey = (event: KeyboardEvent) => { const target = event.target as HTMLElement | null; if (target?.matches('input, textarea, select, [contenteditable="true"]')) return; if (event.key === 'Escape') { if (screenId) closeScreenFocus(); else closeDetail(); setFocus(null); setSourceOpen(false); return } if (!screenId && !selectedId && !focus && (event.code === 'ArrowLeft' || event.code === 'KeyA')) { event.preventDefault(); setViewYaw((value) => THREE.MathUtils.clamp(value - .18, -1, 1)) } if (!screenId && !selectedId && !focus && (event.code === 'ArrowRight' || event.code === 'KeyD')) { event.preventDefault(); setViewYaw((value) => THREE.MathUtils.clamp(value + .18, -1, 1)) } }; window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey) }, [selectedId, screenId, focus, reducedMotion])
-  useEffect(() => { localStorage.setItem('glass-orbit-locale', language) }, [language])
-  const T = (zh: string, en: string) => language === 'zh' ? zh : en; const selected = cards.find((item) => item.id === selectedId) ?? null; const missing = selected?.prerequisites.find((id) => !run.played.includes(id)); const insufficient = selected && (Object.entries(selected.cost) as [ResourceKey, number][]).find(([key, value]) => run.resources[key] < value); const canPlay = Boolean(selected && !missing && !insufficient && run.outcome === 'playing')
-  const finish = (next: RunState): RunState => { const protectedBase = next.resources.shield >= event.shieldTarget; const sustained = next.resources.lifeSupport >= 4; const outcome: Outcome = protectedBase && sustained ? 'success' : protectedBase || sustained ? 'partial' : 'failed'; return { ...next, outcome, events: [...next.events, { type: 'finish_run', outcome }] } }
-  const playCard = (chosen: CardDefinition) => { setRun((current) => { const nextResources = { ...current.resources }; for (const [key, value] of Object.entries(chosen.cost) as [ResourceKey, number][]) nextResources[key] -= value; (['power', 'lifeSupport', 'shield'] as ResourceKey[]).forEach((key) => { nextResources[key] += chosen.effects[key] ?? 0 }); const next = { ...current, resources: nextResources, evidence: current.evidence + (chosen.effects.evidence ?? 0), comms: current.comms + (chosen.effects.comms ?? 0), turns: current.turns + 1, played: [...current.played, chosen.id], events: [...current.events, { type: 'play_card' as const, cardId: chosen.id }, { type: 'consume_cost' as const, cost: chosen.cost }, { type: 'update_resource' as const, resources: nextResources }, ...(chosen.effects.evidence ? [{ type: 'reveal_evidence' as const }] : [])] }; return (nextResources.shield >= event.shieldTarget && nextResources.lifeSupport >= 4) || next.turns >= 5 ? finish(next) : next }); closeDetail() }
-  const play = () => { if (selected && canPlay) playCard(selected) }
-  const interactWithWorldObject = (objectId: string) => { const chosen = cards.find((item) => item.id === objectId); if (!chosen) return; const missingPrerequisite = chosen.prerequisites.some((id) => !run.played.includes(id)); const lacksCost = (Object.entries(chosen.cost) as [ResourceKey, number][]).some(([key, value]) => run.resources[key] < value); if (selectedId === objectId && detailState === 'expanded' && !missingPrerequisite && !lacksCost && run.outcome === 'playing') playCard(chosen); else if (selectedId !== objectId) setSelectedId(objectId) }
-  const replay = (newEvent: boolean) => { const nextSeed = newEvent ? (seed + 1) % missionEvents.length : seed; setPrevious(run); setSeed(nextSeed); setRun(initialRun(missionEvents[nextSeed])); setSelectedId(null); setDetailState('closed'); setFocus(null); setSourceOpen(false); setStarted(true) }
-  const eventSummary = T(`DONKI 於 ${event.record.startTime.replace('T', ' ')} 記錄一筆 CME；所選分析速度為 ${event.speed} km/s。`, `DONKI recorded a CME at ${event.record.startTime.replace('T', ' ')}; the selected analysis lists ${event.speed} km/s.`)
-  const nova = !selected ? T('先選一張桌上的展品卡：圖示、成本與短效果都已在卡面上。', 'Choose an exhibit card on the desk: its icon, cost, and short effect are already on its face.') : !canPlay ? T('這張卡還不能使用。看看詳情裡的前置條件或資源成本。', 'This card cannot be used yet. Check its prerequisites or resource cost in the detail.') : T('很好。詳情牌把資料、教育模型與限制放在同一個位置。', 'Great. The detail plaque keeps the data, education model, and limitations together.')
-  const eventText = (item: GameEvent) => { if (item.type === 'draw_event') return T(`抽到 DONKI 事件：護盾目標 ${item.event!.shieldTarget}。`, `DONKI event drawn: shield target ${item.event!.shieldTarget}.`); if (item.type === 'play_card') return T(`打出「${text(cards.find((card) => card.id === item.cardId)!.title, language)}」。`, `Played “${text(cards.find((card) => card.id === item.cardId)!.title, language)}”.`); if (item.type === 'consume_cost') return T(`支付：${Object.entries(item.cost!).map(([key, value]) => `${text(resources[key as ResourceKey].label, language)} ${value}`).join('、') || '無'}`, `Paid: ${Object.entries(item.cost!).map(([key, value]) => `${text(resources[key as ResourceKey].label, language)} ${value}`).join(', ') || 'none'}`); if (item.type === 'update_resource') return T(`資源更新：電力 ${item.resources!.power}、生命維持 ${item.resources!.lifeSupport}、護盾 ${item.resources!.shield}。`, `Resources: power ${item.resources!.power}, life support ${item.resources!.lifeSupport}, shield ${item.resources!.shield}.`); if (item.type === 'reveal_evidence') return T('獲得一枚科學證據標記。', 'Earned one science-evidence marker.'); return item.outcome === 'success' ? T('任務完成：同時照顧了防護與生命維持。', 'Mission complete: protection and life support are both cared for.') : T('任務結算：比較這一局的選擇，再試一個新策略。', 'Mission complete: compare this run, then try a new strategy.') }
-  return <main className={`app-shell ${started ? 'in-mission' : 'at-launch'}`}><header className="topbar"><button className="wordmark" onClick={() => setStarted(false)}><span>GLASS</span> ORBIT <small>／玻璃軌道</small></button><div className="top-actions"><span className="mission-chip">THE NEXT FRONTIER</span><button className="language-button" onClick={() => setLanguage((value) => value === 'zh' ? 'en' : 'zh')}>{language === 'zh' ? 'EN' : '中文'}</button><button className="source-button" onClick={() => setSourceOpen((value) => !value)}>{T('NASA 資料來源', 'NASA data source')} ↗</button></div></header>
-    {!started ? <section className="launch-screen"><p className="eyebrow">2026 NASA SPACE APPS · JUNIOR ASTRONAUT MISSION TRAINER</p><h1>{T('玻璃軌道裡，', 'IN GLASS ORBIT,')}<br /><em>{T('每一張牌都是選擇。', 'EVERY CARD IS A CHOICE.')}</em></h1><p className="launch-copy">{T('給 7–12 歲太空探險家的明亮 3D 像素展館。從一筆真實 NASA 太空天氣資料開始，在電力、生命維持與防護之間做取捨。', 'A bright 3D pixel museum for space explorers ages 7–12. Begin with one real NASA space-weather record, then balance power, life support, and protection.')}</p><div className="launch-actions"><button className="primary-button" onClick={() => setStarted(true)}>{T('進入展館', 'ENTER THE MUSEUM')} <span>↗</span></button><button className="quiet-button" onClick={() => setSourceOpen(true)}>{T('先看資料', 'VIEW THE DATA')}</button></div><div className="launch-facts"><span><b>3D</b>{T('玻璃展館', 'glass museum')}</span><span><b>8</b>{T('張原創卡', 'original cards')}</span><span><b>2</b>{T('個事件種子', 'event seeds')}</span></div><p className="disclaimer">{T('非官方 NASA 教育遊戲，非 NASA 認證、任務標準或安全建議。', 'An independent NASA education game—not NASA-certified training, a mission standard, or safety advice.')}</p></section> : <><section className="mission-room"><RoomScene language={language} selected={selectedId} detailState={detailState} screenId={screenId} screenFocus={screenFocus} viewYaw={viewYaw} hovered={hoveredId} played={run.played} protectedRoom={run.resources.shield >= event.shieldTarget} focus={focus} run={run} mission={event} onFocus={setFocus} onSelect={interactWithWorldObject} onCloseDetail={closeDetail} onFocusScreen={focusScreen} onCloseScreen={closeScreenFocus} onHover={setHoveredId} onToggleLanguage={() => setLanguage((value) => value === 'zh' ? 'en' : 'zh')} reducedMotion={reducedMotion} compact={compact} onReplay={() => replay(false)} onNewEvent={() => replay(true)} /><div className="celestial-label earth-label"><b>EARTH</b><span>{T('補給與通訊', 'supply + signal')}</span></div><div className="celestial-label moon-label"><b>MOON</b><span>{T('近期前哨', 'near outpost')}</span></div><div className="celestial-label mars-label"><b>MARS</b><span>{T('遠距離任務', 'long wait')}</span></div>{focus && <div className="planet-focus"><b>{focus}</b><span>{T('這是一個可聚焦的展品；Escape 回到控制桌。', 'This exhibit can be focused; Escape returns to the desk.')}</span><button onClick={() => setFocus(null)}>{T('回到控制桌', 'RETURN TO DESK')} · Esc</button></div>}<div className="event-card"><div className="event-head"><span className="event-dot" />NASA DONKI · {T('歷史快照', 'ARCHIVED SNAPSHOT')}<button onClick={() => setSourceOpen(true)}>{T('查來源', 'SOURCE')}</button></div><strong>{T('日冕物質拋射（CME）', 'Coronal Mass Ejection')}</strong><p>{eventSummary}</p><div className="event-tags"><span>{T('觀察：日期', 'OBSERVED: DATE')}</span><span>{T('觀察：速度', 'OBSERVED: SPEED')}</span><span>{T('模型：護盾', 'MODEL: SHIELD')} ≥ {event.shieldTarget}</span></div></div>{selected && <aside className="world-detail"><div className="plaque-kicker">{T('控制桌展品詳情', 'CONTROL DESK PLAQUE')} <button onClick={() => setSelectedId(null)}>×</button></div><div className="plaque-title"><i>{selected.symbol}</i><div><small>{text(selected.category, language)}</small><h2>{text(selected.title, language)}</h2><p>{text(selected.shortEffect, language)}</p></div></div><div className="plaque-grid"><span><b>{T('教育模型', 'EDUCATION MODEL')}</b>{text(selected.detail, language)}</span><span><b>{T('NASA 來源', 'NASA SOURCE')}</b>{T('DONKI 歷史事件快照', 'NASA DONKI historical event snapshot')} · {event.record.startTime}</span><span><b>{T('限制', 'LIMITATION')}</b>{text(selected.limitations, language)}</span></div><button className="plaque-close" onClick={() => setSelectedId(null)}>{T('關閉詳情 · Esc', 'CLOSE DETAIL · Esc')}</button></aside>}<div className="nova"><span className="nova-mark">N</span><p><b>NOVA</b>{nova}</p></div><div className="resource-bar">{(Object.keys(resources) as ResourceKey[]).map((key) => <div key={key} className={`resource-meter ${resources[key].tone}`}><span>{resources[key].icon}</span><label>{text(resources[key].label, language)}</label><strong>{run.resources[key]}</strong><i style={{ '--level': `${Math.min(run.resources[key], 6) * 16}%` } as CSSProperties} /></div>)}<div className="turn-meter"><span>{T('回合', 'TURN')}</span><strong>{run.turns}<small>/5</small></strong></div></div></section>
-      <section className="control-deck"><div className="deck-heading"><p className="eyebrow">{T('控制桌 · 點 3D 卡牌或使用無障礙按鈕', 'CONTROL DESK · CLICK 3D CARDS OR USE ACCESSIBLE BUTTONS')}</p><h2>{T('展品手牌', 'EXHIBIT HAND')} <span>{run.played.length}/8 {T('已使用', 'ARCHIVED')}</span></h2></div><div className="card-access-list">{cards.map((item) => <button key={item.id} onClick={() => setSelectedId(item.id)} disabled={run.played.includes(item.id)} className={selectedId === item.id ? 'active' : ''}><span>{item.symbol}</span><b>{text(item.title, language)}</b><small>{text(item.shortEffect, language)}</small></button>)}</div><div className="preview-panel">{selected ? <><p className="eyebrow">{T('出牌預覽', 'PLAY PREVIEW')}</p><h3>{text(selected.title, language)}</h3><p>{text(selected.detail, language)}</p><div className="cost-effect"><div><small>{T('支付成本', 'PAY COST')}</small>{Object.entries(selected.cost).length ? (Object.entries(selected.cost) as [ResourceKey, number][]).map(([key, value]) => <span key={key}>{resources[key].icon} −{value}</span>) : <span>—</span>}</div><div><small>{T('立即後果', 'IMMEDIATE EFFECT')}</small>{(['power', 'lifeSupport', 'shield'] as ResourceKey[]).filter((key) => selected.effects[key]).map((key) => <span key={key}>{resources[key].icon} +{selected.effects[key]}</span>)}{selected.effects.evidence && <span>◉ +1</span>}{selected.effects.comms && <span>⌁ +1</span>}</div></div>{missing && <p className="validation">{T(`需要先打出「${text(cards.find((item) => item.id === missing)!.title, language)}」。`, `Play “${text(cards.find((item) => item.id === missing)!.title, language)}” first.`)}</p>}{insufficient && <p className="validation">{T(`${text(resources[insufficient[0]].label, language)}不足。`, `Not enough ${text(resources[insufficient[0]].label, language)}.`)}</p>}<div className="preview-actions"><button className="primary-button" disabled={!canPlay} onClick={play}>{T('送入控制台', 'PLAY CARD')} <span>↗</span></button><button className="quiet-button" onClick={() => setSelectedId(null)}>{T('取消', 'CANCEL')}</button></div></> : <div className="empty-preview"><span>✦</span><h3>{T('選一張展品卡', 'SELECT AN EXHIBIT CARD')}</h3><p>{T('卡面先給你圖示、成本和短效果；靠近後再看完整資料。', 'The face gives an icon, cost, and short effect; open the plaque for the full record.')}</p></div>}</div><div className="run-log"><p className="eyebrow">MISSION TRACE</p><h3>{T('可回放的任務紀錄', 'REPLAYABLE MISSION TRACE')}</h3><ol>{run.events.slice(-4).reverse().map((item, index) => <li key={`${item.type}-${index}`}><b>{item.type.replace('_', ' ')}</b>{eventText(item)}</li>)}</ol>{run.outcome === 'playing' && <button className="quiet-button finish-button" onClick={() => setRun((current) => finish(current))}>{T('現在結算', 'FINISH NOW')}</button>}</div></section></>}
-    {run.outcome !== 'playing' && started && <section className={`result-card ${run.outcome}`}><p className="eyebrow">MISSION RESULT</p><h2>{run.outcome === 'success' ? T('基地準備好了。', 'THE OUTPOST IS READY.') : run.outcome === 'partial' ? T('你保住了一部分基地。', 'YOU SAVED PART OF THE OUTPOST.') : T('這次基地還需要更多照顧。', 'THE OUTPOST NEEDS MORE CARE.')}</h2><p>{T(`這局的 NASA 教育模型要求護盾至少 ${event.shieldTarget}；看看上一局的數字，再選擇同事件或新事件重玩。`, `This NASA education model asked for shield ${event.shieldTarget} or more. Compare the numbers, then replay this or a new event.`)}</p><div className="result-stats"><span>{T('護盾', 'Shield')} {run.resources.shield}</span><span>{T('生命維持', 'Life')} {run.resources.lifeSupport}</span><span>{T('證據', 'Evidence')} {run.evidence}</span>{previous && <span>{T('上一局護盾', 'Previous shield')} {previous.resources.shield}</span>}</div><div className="result-actions"><button className="primary-button" onClick={() => replay(false)}>{T('自由重玩', 'FREE REPLAY')} <span>↻</span></button><button className="quiet-button" onClick={() => replay(true)}>{T('換一個 NASA 事件', 'NEW NASA EVENT')}</button></div></section>}
-    {sourceOpen && <aside className="source-drawer"><div className="drawer-head"><div><p className="eyebrow">TRACEABLE DATA</p><h2>NASA DONKI</h2></div><button onClick={() => setSourceOpen(false)} aria-label="Close">×</button></div><div className="source-block observed"><small>{T('NASA 觀察', 'NASA OBSERVATION')}</small><p>{T(`原始記錄 ${event.record.activityID}；所選分析以 ${event.technique} 測得 ${event.speed} km/s。`, `Original record ${event.record.activityID}; the selected ${event.technique} analysis lists ${event.speed} km/s.`)}</p></div><div className="source-block inferred"><small>{T('遊戲推論', 'GAME INFERENCE')}</small><p>{T('這筆資料讓玩家練習「先保護，再探索」的取捨；它不預測虛構基地的結果。', 'This record invites a “protect before explore” trade-off; it does not predict the fictional outpost’s outcome.')}</p></div><div className="source-block model"><small>{T('教育模型與未知', 'EDUCATION MODEL + UNKNOWN')}</small><p>{T(`此事件的遊戲護盾目標為 ${event.shieldTarget}。所有資源點都不是劑量、預報、工程設計或 NASA 任務建議。`, `This event’s game shield target is ${event.shieldTarget}. Every resource point is not a dose, forecast, engineering design, or NASA mission recommendation.`)}</p></div><dl><dt>{T('狀態', 'STATUS')}</dt><dd>{T('離線快照 · HTTP 200', 'Offline snapshot · HTTP 200')}</dd><dt>{T('取得 UTC', 'RETRIEVED UTC')}</dt><dd>{source.retrievedAtUtc}</dd><dt>SHA-256</dt><dd className="hash">{source.sha256}</dd><dt>{T('原始事件', 'ORIGINAL EVENT')}</dt><dd>{event.record.startTime}</dd></dl><a href={source.challengeUrl} target="_blank" rel="noreferrer">{T('2026 挑戰：Junior Astronaut Mission Trainer', '2026 challenge: Junior Astronaut Mission Trainer')} ↗</a><a href={source.officialUrl} target="_blank" rel="noreferrer">NASA DONKI ↗</a><a href={event.record.link} target="_blank" rel="noreferrer">{T('開啟本 CME 記錄', 'Open this CME record')} ↗</a></aside>}
-  </main>
+  const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('glass-orbit-locale') === 'zh' ? 'zh' : 'en'))
+  const [started, setStarted] = useState(false)
+  const [seed, setSeed] = useState(0)
+  const event = missionEvents[seed]
+  const [run, setRun] = useState<RunState>(() => initialRun(missionEvents[0]))
+  const [previous, setPrevious] = useState<RunState | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [detailState, setDetailState] = useState<CardDetailState>('closed')
+  const [screenId, setScreenId] = useState<ScreenId | null>(null)
+  const [screenFocus, setScreenFocus] = useState<ScreenFocusState>('overview')
+  const [viewYaw] = useState(0)
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const [sourceOpen, setSourceOpen] = useState(false)
+  const [focus, setFocus] = useState<PlanetName | null>(null)
+  const [reducedMotion, setReducedMotion] = useState(false)
+  const [compact, setCompact] = useState(() => window.innerWidth < 640)
+  const returnTimer = useRef<number | null>(null)
+  const screenTimers = useRef<number[]>([])
+
+  const closeDetail = () => {
+    if (!selectedId) return
+    if (returnTimer.current) window.clearTimeout(returnTimer.current)
+    setDetailState('returning')
+    returnTimer.current = window.setTimeout(() => {
+      setSelectedId(null)
+      setDetailState('closed')
+    }, reducedMotion ? 0 : 460)
+  }
+
+  const clearScreenTimers = () => {
+    screenTimers.current.forEach((timer) => window.clearTimeout(timer))
+    screenTimers.current = []
+  }
+
+  const focusScreen = (id: ScreenId) => {
+    if (screenFocus !== 'overview') return
+    clearScreenTimers()
+    setScreenId(id)
+    setScreenFocus(reducedMotion ? 'focused' : 'targeting')
+    if (reducedMotion) return
+    const dolly = window.setTimeout(() => setScreenFocus('dollyIn'), 120)
+    const focused = window.setTimeout(() => {
+      setScreenFocus('focused')
+      screenTimers.current = []
+    }, 650)
+    screenTimers.current = [dolly, focused]
+  }
+
+  const closeScreenFocus = () => {
+    if (!screenId || screenFocus === 'returning') return
+    clearScreenTimers()
+    setScreenFocus('returning')
+    const returned = window.setTimeout(() => {
+      setScreenFocus('overview')
+      setScreenId(null)
+      screenTimers.current = []
+    }, reducedMotion ? 0 : 620)
+    screenTimers.current = [returned]
+  }
+
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const sync = () => setReducedMotion(media.matches)
+    sync()
+    media.addEventListener('change', sync)
+    return () => media.removeEventListener('change', sync)
+  }, [])
+
+  useEffect(() => {
+    const sync = () => setCompact(window.innerWidth < 640)
+    window.addEventListener('resize', sync)
+    return () => window.removeEventListener('resize', sync)
+  }, [])
+
+  useEffect(() => {
+    if (!selectedId) {
+      setDetailState('closed')
+      return
+    }
+    if (returnTimer.current) window.clearTimeout(returnTimer.current)
+    setDetailState(reducedMotion ? 'expanded' : 'lifting')
+    if (reducedMotion) return
+    const moving = window.setTimeout(() => setDetailState('moving'), 120)
+    const expanded = window.setTimeout(() => setDetailState('expanded'), 430)
+    return () => {
+      window.clearTimeout(moving)
+      window.clearTimeout(expanded)
+    }
+  }, [selectedId, reducedMotion])
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (target?.matches('input, textarea, select, [contenteditable="true"]')) return
+      if (event.key === 'Escape') {
+        if (screenId) closeScreenFocus()
+        else closeDetail()
+        setFocus(null)
+        setSourceOpen(false)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [selectedId, screenId, focus, reducedMotion])
+
+  useEffect(() => {
+    localStorage.setItem('glass-orbit-locale', language)
+  }, [language])
+
+  const T = (zh: string, en: string) => (language === 'zh' ? zh : en)
+  const selected = cards.find((item) => item.id === selectedId) ?? null
+  const missing = selected?.prerequisites.find((id) => !run.played.includes(id))
+  const insufficient =
+    selected && (Object.entries(selected.cost) as [ResourceKey, number][]).find(([key, value]) => run.resources[key] < value)
+  const canPlay = Boolean(selected && !missing && !insufficient && run.outcome === 'playing')
+
+  const finish = (next: RunState): RunState => {
+    const protectedBase = next.resources.shield >= event.shieldTarget
+    const sustained = next.resources.lifeSupport >= event.lifeTarget
+    const scienceMet = next.evidence >= event.evidenceTarget
+    const commsMet = next.comms >= event.commsTarget
+    const allMet = protectedBase && sustained && scienceMet && commsMet
+    const anyMajorMet = protectedBase || sustained
+    const outcome: Outcome = allMet ? 'success' : anyMajorMet ? 'partial' : 'failed'
+    return { ...next, outcome, events: [...next.events, { type: 'finish_run', outcome }] }
+  }
+
+  const playCard = (chosen: CardDefinition) => {
+    setRun((current) => {
+      const nextResources = { ...current.resources }
+      for (const [key, value] of Object.entries(chosen.cost) as [ResourceKey, number][]) nextResources[key] -= value
+      ;(['power', 'lifeSupport', 'shield'] as ResourceKey[]).forEach((key) => {
+        nextResources[key] += chosen.effects[key] ?? 0
+      })
+      // Special skill: CME Arrival Forecast synergy when comms >= 1
+      if (chosen.id === 'cme-forecast' && current.comms >= 1) {
+        nextResources.power += 1
+        nextResources.shield += 1
+      }
+      // Draw replacement card from remaining deck into the played hand slot
+      const [drawn, ...restDeck] = current.deck
+      const nextHand = drawn
+        ? current.hand.map((id) => (id === chosen.id ? drawn : id))
+        : current.hand.filter((id) => id !== chosen.id)
+
+      const next: RunState = {
+        ...current,
+        resources: nextResources,
+        evidence: current.evidence + (chosen.effects.evidence ?? 0),
+        comms: current.comms + (chosen.effects.comms ?? 0),
+        turns: current.turns + 1,
+        played: [...current.played, chosen.id],
+        hand: nextHand,
+        deck: restDeck,
+        events: [
+          ...current.events,
+          { type: 'play_card', cardId: chosen.id },
+          { type: 'consume_cost', cost: chosen.cost },
+          { type: 'update_resource', resources: nextResources },
+          ...(chosen.effects.evidence ? [{ type: 'reveal_evidence' as const }] : []),
+        ],
+      }
+      const allTargetsMet =
+        nextResources.shield >= event.shieldTarget &&
+        nextResources.lifeSupport >= event.lifeTarget &&
+        next.evidence >= event.evidenceTarget &&
+        next.comms >= event.commsTarget
+      return allTargetsMet || next.turns >= 5 ? finish(next) : next
+    })
+    closeDetail()
+  }
+
+  const play = () => {
+    if (selected && canPlay) playCard(selected)
+  }
+
+  const interactWithWorldObject = (objectId: string) => {
+    const chosen = cards.find((item) => item.id === objectId)
+    if (!chosen) return
+    const missingPrerequisite = chosen.prerequisites.some((id) => !run.played.includes(id))
+    const lacksCost = (Object.entries(chosen.cost) as [ResourceKey, number][]).some(
+      ([key, value]) => run.resources[key] < value,
+    )
+    if (selectedId === objectId && detailState === 'expanded' && !missingPrerequisite && !lacksCost && run.outcome === 'playing') {
+      playCard(chosen)
+    } else if (selectedId !== objectId) {
+      setSelectedId(objectId)
+    }
+  }
+
+  const replay = (newEvent: boolean) => {
+    const nextSeed = newEvent ? (seed + 1) % missionEvents.length : seed
+    setPrevious(run)
+    setSeed(nextSeed)
+    setRun(initialRun(missionEvents[nextSeed]))
+    setSelectedId(null)
+    setDetailState('closed')
+    setFocus(null)
+    setSourceOpen(false)
+    setStarted(true)
+  }
+
+  const eventSummary = T(
+    `DONKI 於 ${event.record.startTime.replace('T', ' ')} 記錄一筆 CME；所選分析速度為 ${event.speed} km/s。`,
+    `DONKI recorded a CME at ${event.record.startTime.replace('T', ' ')}; the selected analysis lists ${event.speed} km/s.`,
+  )
+  const nova = !selected
+    ? T('先選一張桌上的展品卡：圖示、成本與短效果都已在卡面上。', 'Choose an exhibit card on the desk: its icon, cost, and short effect are already on its face.')
+    : !canPlay
+      ? T('這張卡還不能使用。看看詳情裡的前置條件或資源成本。', 'This card cannot be used yet. Check its prerequisites or resource cost in the detail.')
+      : T('很好。詳情牌把資料、教育模型與限制放在同一個位置。', 'Great. The detail plaque keeps the data, education model, and limitations together.')
+
+  const eventText = (item: GameEvent) => {
+    if (item.type === 'draw_event') {
+      return T(`抽到 DONKI 事件：護盾目標 ${item.event!.shieldTarget}。`, `DONKI event drawn: shield target ${item.event!.shieldTarget}.`)
+    }
+    if (item.type === 'play_card') {
+      const title = text(cards.find((c) => c.id === item.cardId)!.title, language)
+      return T(`打出「${title}」。`, `Played “${title}”.`)
+    }
+    if (item.type === 'consume_cost') {
+      return T(
+        `支付：${Object.entries(item.cost!).map(([key, value]) => `${text(resources[key as ResourceKey].label, language)} ${value}`).join('、') || '無'}`,
+        `Paid: ${Object.entries(item.cost!).map(([key, value]) => `${text(resources[key as ResourceKey].label, language)} ${value}`).join(', ') || 'none'}`,
+      )
+    }
+    if (item.type === 'update_resource') {
+      return T(
+        `資源更新：電力 ${item.resources!.power}、生命維持 ${item.resources!.lifeSupport}、護盾 ${item.resources!.shield}。`,
+        `Resources: power ${item.resources!.power}, life support ${item.resources!.lifeSupport}, shield ${item.resources!.shield}.`,
+      )
+    }
+    if (item.type === 'reveal_evidence') return T('獲得一枚科學證據標記。', 'Earned one science-evidence marker.')
+    return item.outcome === 'success'
+      ? T('任務完成：同時照顧了防護與生命維持。', 'Mission complete: protection and life support are both cared for.')
+      : T('任務結算：比較這一局的選擇，再試一個新策略。', 'Mission complete: compare this run, then try a new strategy.')
+  }
+
+  return (
+    <main className={`app-shell ${started ? 'in-mission' : 'at-launch'}`}>
+      <header className="topbar">
+        <button className="wordmark" onClick={() => setStarted(false)}>
+          <span>GLASS</span> ORBIT <small>／玻璃軌道</small>
+        </button>
+        <div className="top-actions">
+          <span className="mission-chip">THE NEXT FRONTIER</span>
+          <button className="language-button" onClick={() => setLanguage((value) => (value === 'zh' ? 'en' : 'zh'))}>
+            {language === 'zh' ? 'EN' : '中文'}
+          </button>
+          <button className="source-button" onClick={() => setSourceOpen((value) => !value)}>
+            {T('NASA 資料來源', 'NASA data source')} ↗
+          </button>
+        </div>
+      </header>
+
+      <section className="mission-room">
+        <RoomScene
+          language={language}
+          selected={selectedId}
+          detailState={detailState}
+          screenId={screenId}
+          screenFocus={screenFocus}
+          viewYaw={viewYaw}
+          hovered={hoveredId}
+          played={run.played}
+          protectedRoom={run.resources.shield >= event.shieldTarget}
+          focus={focus}
+          run={run}
+          mission={event}
+          onFocus={setFocus}
+          onSelect={interactWithWorldObject}
+          onCloseDetail={closeDetail}
+          onFocusScreen={focusScreen}
+          onCloseScreen={closeScreenFocus}
+          onHover={setHoveredId}
+          onToggleLanguage={() => setLanguage((value) => (value === 'zh' ? 'en' : 'zh'))}
+          reducedMotion={reducedMotion}
+          compact={compact}
+          onReplay={() => replay(false)}
+          onNewEvent={() => replay(true)}
+          onOpenSource={() => setSourceOpen((value) => !value)}
+          onOpenBrief={() => setStarted(false)}
+          previewMode={!started}
+        />
+
+        {!started && (
+          <div className="cockpit-launch-overlay" role="dialog" aria-label="Glass Orbit Launch">
+            <div className="cockpit-launch-card">
+              <div className="cockpit-launch-top">
+                <span className="cockpit-eyebrow">2026 NASA SPACE APPS // JUNIOR ASTRONAUT MISSION TRAINER</span>
+                <button
+                  className="cockpit-lang-btn"
+                  onClick={() => setLanguage((value) => (value === 'zh' ? 'en' : 'zh'))}
+                >
+                  {language === 'zh' ? 'EN ⇄ 繁中' : '繁中 ⇄ EN'}
+                </button>
+              </div>
+              <h1 className="cockpit-title">
+                GLASS ORBIT <span>// {T('玻璃軌道：太空前哨戰術官', 'SPACE OUTPOST TACTICS')}</span>
+              </h1>
+              <p className="cockpit-subtitle">
+                {T(
+                  '真實 NASA DONKI 太陽風暴正衝向月球／火星前哨站。在 360° 玻璃觀測艙內運用 12 張戰術特技卡，平衡電力、維生與護盾。',
+                  'A real NASA DONKI solar storm is heading for the lunar/Martian outpost. Balance power, life support, and shielding across 5 turns inside a 360° glass observatory.',
+                )}
+              </p>
+              <div className="cockpit-steps">
+                <div className="cockpit-step">
+                  <b>01 · {T('讀取 NASA 風暴', 'READ NASA DATA')}</b>
+                  <span>{T('點中央螢幕看 CME 速度，決定本局所需護盾格數', 'Check CME speed on the center terminal to see Shield goal')}</span>
+                </div>
+                <div className="cockpit-step">
+                  <b>02 · {T('五回合抽牌取捨', 'PLAY & DRAW CARDS')}</b>
+                  <span>{T('點牌放大檢視成本與 ★ 特技，出牌後隨機抽補新卡', 'Inspect card costs & ★ skills; every play draws a fresh card')}</span>
+                </div>
+                <div className="cockpit-step">
+                  <b>03 · {T('能量柱與工程反思', 'PILLARS & DEBRIEF')}</b>
+                  <span>{T('觀察右方圓桌三根能量柱，完成 5 回合進行科學反思', 'Watch the round-table pillars and review mission trade-offs')}</span>
+                </div>
+              </div>
+              <div className="cockpit-actions">
+                <button className="primary-button cockpit-start-btn" onClick={() => setStarted(true)}>
+                  ▶ {T('進入太空艙開始任務', 'LAUNCH MISSION')}
+                </button>
+                <button className="cockpit-secondary-btn" onClick={() => setSourceOpen(true)}>
+                  {T('NASA 資料來源', 'NASA DATA SOURCE')}
+                </button>
+              </div>
+              <p className="cockpit-disclaimer">
+                {T(
+                  '非官方 NASA 教育原型（Non-official NASA education prototype），僅供 7–12 歲 STEM 教育與科學思考練習，非 NASA 官方認證或安全預測。',
+                  'Non-official NASA education prototype for STEM learning (ages 7–12); not NASA-certified training or a real safety forecast.',
+                )}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {started && (
+          <>
+            <div className="celestial-label earth-label">
+              <b>EARTH</b>
+              <span>{T('補給與通訊', 'supply + signal')}</span>
+            </div>
+            <div className="celestial-label moon-label">
+              <b>MOON</b>
+              <span>{T('近期前哨', 'near outpost')}</span>
+            </div>
+            <div className="celestial-label mars-label">
+              <b>MARS</b>
+              <span>{T('遠距離任務', 'long wait')}</span>
+            </div>
+            {focus && (
+              <div className="planet-focus">
+                <b>{focus}</b>
+                <span>{T('這是一個可聚焦的展品；Escape 回到控制桌。', 'This exhibit can be focused; Escape returns to the desk.')}</span>
+                <button onClick={() => setFocus(null)}>{T('回到控制桌', 'RETURN TO DESK')} · Esc</button>
+              </div>
+            )}
+            <div className="event-card">
+              <div className="event-head">
+                <span className="event-dot" />
+                NASA DONKI · {T('歷史快照', 'ARCHIVED SNAPSHOT')}
+                <button onClick={() => setSourceOpen(true)}>{T('查來源', 'SOURCE')}</button>
+              </div>
+              <strong>{T('日冕物質拋射（CME）', 'Coronal Mass Ejection')}</strong>
+              <p>{eventSummary}</p>
+              <div className="event-tags">
+                <span>{T('觀察：日期', 'OBSERVED: DATE')}</span>
+                <span>{T('觀察：速度', 'OBSERVED: SPEED')}</span>
+                <span>
+                  {T('模型：護盾', 'MODEL: SHIELD')} ≥ {event.shieldTarget}
+                </span>
+              </div>
+            </div>
+            {selected && (
+              <aside className="world-detail">
+                <div className="plaque-kicker">
+                  {T('控制桌展品詳情', 'CONTROL DESK PLAQUE')} <button onClick={() => setSelectedId(null)}>×</button>
+                </div>
+                <div className="plaque-title">
+                  <i>{selected.symbol}</i>
+                  <div>
+                    <small>{text(selected.category, language)}</small>
+                    <h2>{text(selected.title, language)}</h2>
+                    <p>{text(selected.shortEffect, language)}</p>
+                  </div>
+                </div>
+                <div className="plaque-grid">
+                  <span>
+                    <b>{T('教育重點', 'LEARNING POINT')}</b>
+                    {text(selected.lesson, language)}
+                  </span>
+                  <span>
+                    <b>{T('教育模型', 'EDUCATION MODEL')}</b>
+                    {text(selected.detail, language)}
+                  </span>
+                  <span>
+                    <b>{T('NASA 來源', 'NASA SOURCE')}</b>
+                    {T('DONKI 歷史事件快照', 'NASA DONKI historical event snapshot')} · {event.record.startTime}
+                  </span>
+                  <span>
+                    <b>{T('限制', 'LIMITATION')}</b>
+                    {text(selected.limitations, language)}
+                  </span>
+                </div>
+                <button className="plaque-close" onClick={() => setSelectedId(null)}>
+                  {T('關閉詳情 · Esc', 'CLOSE DETAIL · Esc')}
+                </button>
+              </aside>
+            )}
+            <div className="nova">
+              <span className="nova-mark">N</span>
+              <p>
+                <b>NOVA</b>
+                {nova}
+              </p>
+            </div>
+            <div className="resource-bar">
+              {(Object.keys(resources) as ResourceKey[]).map((key) => (
+                <div key={key} className={`resource-meter ${resources[key].tone}`}>
+                  <span>{resources[key].icon}</span>
+                  <label>{text(resources[key].label, language)}</label>
+                  <strong>{run.resources[key]}</strong>
+                  <i style={{ '--level': `${Math.min(run.resources[key], 6) * 16}%` } as CSSProperties} />
+                </div>
+              ))}
+            </div>
+            <div className="turn-meter">
+              <span>{T('回合', 'TURN')}</span>
+              <strong>
+                {run.turns}
+                <small>/5</small>
+              </strong>
+            </div>
+          </>
+          )}
+          </section>
+
+          {started && (
+          <section className="control-deck">
+            <div className="deck-heading">
+              <p className="eyebrow">{T('控制桌 · 點 3D 卡牌或使用無障礙按鈕', 'CONTROL DESK · CLICK 3D CARDS OR USE ACCESSIBLE BUTTONS')}</p>
+              <h2>
+                {T('展品手牌', 'EXHIBIT HAND')}{' '}
+                <span>
+                  {run.played.length}/8 {T('已使用', 'ARCHIVED')}
+                </span>
+              </h2>
+            </div>
+            <div className="card-access-list">
+              {cards.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setSelectedId(item.id)}
+                  disabled={run.played.includes(item.id)}
+                  className={selectedId === item.id ? 'active' : ''}
+                >
+                  <span>{item.symbol}</span>
+                  <b>{text(item.title, language)}</b>
+                  <small>{text(item.shortEffect, language)}</small>
+                </button>
+              ))}
+            </div>
+            <div className="preview-panel">
+              {selected ? (
+                <>
+                  <p className="eyebrow">{T('出牌預覽', 'PLAY PREVIEW')}</p>
+                  <h3>{text(selected.title, language)}</h3>
+                  <p>{text(selected.detail, language)}</p>
+                  <div className="cost-effect">
+                    <div>
+                      <small>{T('支付成本', 'PAY COST')}</small>
+                      {Object.entries(selected.cost).length ? (
+                        (Object.entries(selected.cost) as [ResourceKey, number][]).map(([key, value]) => (
+                          <span key={key}>
+                            {resources[key].icon} −{value}
+                          </span>
+                        ))
+                      ) : (
+                        <span>—</span>
+                      )}
+                    </div>
+                    <div>
+                      <small>{T('立即後果', 'IMMEDIATE EFFECT')}</small>
+                      {(['power', 'lifeSupport', 'shield'] as ResourceKey[])
+                        .filter((key) => selected.effects[key])
+                        .map((key) => (
+                          <span key={key}>
+                            {resources[key].icon} +{selected.effects[key]}
+                          </span>
+                        ))}
+                      {selected.effects.evidence && <span>◉ +1</span>}
+                      {selected.effects.comms && <span>⌁ +1</span>}
+                    </div>
+                  </div>
+                  {missing && (
+                    <p className="validation">
+                      {T(
+                        `需要先打出「${text(cards.find((item) => item.id === missing)!.title, language)}」。`,
+                        `Play “${text(cards.find((item) => item.id === missing)!.title, language)}” first.`,
+                      )}
+                    </p>
+                  )}
+                  {insufficient && (
+                    <p className="validation">
+                      {T(
+                        `${text(resources[insufficient[0]].label, language)}不足。`,
+                        `Not enough ${text(resources[insufficient[0]].label, language)}.`,
+                      )}
+                    </p>
+                  )}
+                  <div className="preview-actions">
+                    <button className="primary-button" disabled={!canPlay} onClick={play}>
+                      {T('送入控制台', 'PLAY CARD')} <span>↗</span>
+                    </button>
+                    <button className="quiet-button" onClick={() => setSelectedId(null)}>
+                      {T('取消', 'CANCEL')}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="empty-preview">
+                  <span>✦</span>
+                  <h3>{T('選一張展品卡', 'SELECT AN EXHIBIT CARD')}</h3>
+                  <p>
+                    {T(
+                      '卡面先給你圖示、成本和短效果；靠近後再看完整資料。',
+                      'The face gives an icon, cost, and short effect; open the plaque for the full record.',
+                    )}
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="run-log">
+              <p className="eyebrow">MISSION TRACE</p>
+              <h3>{T('可回放的任務紀錄', 'REPLAYABLE MISSION TRACE')}</h3>
+              <ol>
+                {run.events
+                  .slice(-4)
+                  .reverse()
+                  .map((item, index) => (
+                    <li key={`${item.type}-${index}`}>
+                      <b>{item.type.replace('_', ' ')}</b>
+                      {eventText(item)}
+                    </li>
+                  ))}
+              </ol>
+              {run.outcome === 'playing' && (
+                <button className="quiet-button finish-button" onClick={() => setRun((current) => finish(current))}>
+                  {T('現在結算', 'FINISH NOW')}
+                </button>
+              )}
+            </div>
+          </section>
+          )}
+
+      {run.outcome !== 'playing' && started && (
+        <section className={`result-card ${run.outcome}`}>
+          <p className="eyebrow">MISSION RESULT</p>
+          <h2>
+            {run.outcome === 'success'
+              ? T('基地準備好了。', 'THE OUTPOST IS READY.')
+              : run.outcome === 'partial'
+                ? T('你保住了一部分基地。', 'YOU SAVED PART OF THE OUTPOST.')
+                : T('這次基地還需要更多照顧。', 'THE OUTPOST NEEDS MORE CARE.')}
+          </h2>
+          <p>
+            {T(
+              `這局的 NASA 教育模型要求護盾至少 ${event.shieldTarget}；看看上一局的數字，再選擇同事件或新事件重玩。`,
+              `This NASA education model asked for shield ${event.shieldTarget} or more. Compare the numbers, then replay this or a new event.`,
+            )}
+          </p>
+          <div className="result-stats">
+            <span>
+              {T('護盾', 'Shield')} {run.resources.shield}
+            </span>
+            <span>
+              {T('生命維持', 'Life')} {run.resources.lifeSupport}
+            </span>
+            <span>
+              {T('證據', 'Evidence')} {run.evidence}
+            </span>
+            {previous && (
+              <span>
+                {T('上一局護盾', 'Previous shield')} {previous.resources.shield}
+              </span>
+            )}
+          </div>
+          <div className="result-actions">
+            <button className="primary-button" onClick={() => replay(false)}>
+              {T('自由重玩', 'FREE REPLAY')} <span>↻</span>
+            </button>
+            <button className="quiet-button" onClick={() => replay(true)}>
+              {T('換一個 NASA 事件', 'NEW NASA EVENT')}
+            </button>
+          </div>
+        </section>
+      )}
+
+      {sourceOpen && (
+        <aside className="source-drawer">
+          <div className="drawer-head">
+            <div>
+              <p className="eyebrow">TRACEABLE DATA</p>
+              <h2>NASA DONKI</h2>
+            </div>
+            <button onClick={() => setSourceOpen(false)} aria-label="Close">
+              ×
+            </button>
+          </div>
+          <div className="source-block observed">
+            <small>{T('NASA 觀察', 'NASA OBSERVATION')}</small>
+            <p>
+              {T(
+                `原始記錄 ${event.record.activityID}；所選分析以 ${event.technique} 測得 ${event.speed} km/s。`,
+                `Original record ${event.record.activityID}; the selected ${event.technique} analysis lists ${event.speed} km/s.`,
+              )}
+            </p>
+          </div>
+          <div className="source-block inferred">
+            <small>{T('遊戲推論', 'GAME INFERENCE')}</small>
+            <p>
+              {T(
+                '這筆資料讓玩家練習「先保護，再探索」的取捨；它不預測虛構基地的結果。',
+                'This record invites a “protect before explore” trade-off; it does not predict the fictional outpost’s outcome.',
+              )}
+            </p>
+          </div>
+          <div className="source-block model">
+            <small>{T('教育模型與未知', 'EDUCATION MODEL + UNKNOWN')}</small>
+            <p>
+              {T(
+                `此事件的遊戲護盾目標為 ${event.shieldTarget}。所有資源點都不是劑量、預報、工程設計或 NASA 任務建議。`,
+                `This event’s game shield target is ${event.shieldTarget}. Every resource point is not a dose, forecast, engineering design, or NASA mission recommendation.`,
+              )}
+            </p>
+          </div>
+          <dl>
+            <dt>{T('狀態', 'STATUS')}</dt>
+            <dd>{T('離線快照 · HTTP 200', 'Offline snapshot · HTTP 200')}</dd>
+            <dt>{T('取得 UTC', 'RETRIEVED UTC')}</dt>
+            <dd>{source.retrievedAtUtc}</dd>
+            <dt>SHA-256</dt>
+            <dd className="hash">{source.sha256}</dd>
+            <dt>{T('原始事件', 'ORIGINAL EVENT')}</dt>
+            <dd>{event.record.startTime}</dd>
+          </dl>
+          <a href={source.challengeUrl} target="_blank" rel="noreferrer">
+            {T('2026 挑戰：Junior Astronaut Mission Trainer', '2026 challenge: Junior Astronaut Mission Trainer')} ↗
+          </a>
+          <a href={source.officialUrl} target="_blank" rel="noreferrer">
+            NASA DONKI ↗
+          </a>
+          <a href={event.record.link} target="_blank" rel="noreferrer">
+            {T('開啟本 CME 記錄', 'Open this CME record')} ↗
+          </a>
+        </aside>
+      )}
+    </main>
+  )
 }
+
 export default App
-function makeTutorialTexture(language: Language, title: string, lines: string[]) { const canvas = document.createElement('canvas'); canvas.width = 1260; canvas.height = 810; const ctx = canvas.getContext('2d')!; ctx.scale(3, 3); ctx.fillStyle = '#0d2632'; ctx.fillRect(0, 0, 420, 270); ctx.strokeStyle = '#d5b261'; ctx.lineWidth = 7; ctx.strokeRect(6, 6, 408, 258); ctx.fillStyle = '#5aa7a4'; ctx.fillRect(24, 26, 372, 34); ctx.fillStyle = '#eff4e9'; ctx.font = '700 23px "Arial Black", Arial, sans-serif'; ctx.fillText(title, 36, 53); ctx.fillStyle = '#dce9e2'; ctx.font = '600 18px "Arial Black", Arial, sans-serif'; let y = 106; lines.flatMap((line) => line.match(/.{1,31}(?:\s|$)/g) ?? [line]).slice(0, 4).forEach((line) => { ctx.fillText(line.trim(), 36, y); y += 34 }); ctx.fillStyle = '#d5b261'; ctx.font = '700 14px "Arial Black", Arial, sans-serif'; ctx.fillText(language === 'zh' ? '輕觸金色方塊跳過／重看' : 'TAP GOLD BLOCK TO SKIP / REPLAY', 36, 238); const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; texture.magFilter = THREE.LinearFilter; texture.minFilter = THREE.LinearMipmapLinearFilter; return texture }
-function TutorialBeacon3D({ language, step, onInspectRoom, onSkip, onReplay }: { language: Language; step: TutorialStep; onInspectRoom: () => void; onSkip: () => void; onReplay: () => void }) { const copy: Record<TutorialStep, { title: string; lines: string[] }> = { room: { title: language === 'zh' ? 'NOVA｜快速入門 1/6' : 'NOVA | FIRST ORBIT 1/6', lines: language === 'zh' ? ['先看這張控制桌與三座終端。', '輕觸發亮的桌面，開始 90 秒任務。'] : ['Meet the desk and three terminals.', 'Tap the glowing desk to begin.'] }, look: { title: language === 'zh' ? 'NOVA｜看周圍 2/6' : 'NOVA | LOOK AROUND 2/6', lines: language === 'zh' ? ['用 ← → 或 A／D 查看周圍。', '左右角的實體箭頭也能轉動。'] : ['Use ← → or A / D to look around.', 'Desk arrows work on touch too.'] }, language: { title: language === 'zh' ? 'NOVA｜切換語言 3/6' : 'NOVA | LANGUAGE 3/6', lines: language === 'zh' ? ['按右前方的語言旋鈕。', '看看整個房間一起切換文字。'] : ['Press the language dial at front-right.', 'Watch the room change together.'] }, screen: { title: language === 'zh' ? 'NOVA｜看螢幕 4/6' : 'NOVA | FOCUS A SCREEN 4/6', lines: language === 'zh' ? ['點任一玻璃終端，再按 Escape 回桌。', '你仍在同一個三維房間。'] : ['Tap any glass terminal, then press Escape.', 'You are still inside this 3D room.'] }, card: { title: language === 'zh' ? 'NOVA｜看一張牌 5/6' : 'NOVA | INSPECT A CARD 5/6', lines: language === 'zh' ? ['點一張卡讓它抬起、靠近並展開。', '關閉詳情後再做決定。'] : ['Tap a card to lift, move, and expand it.', 'Return it, then make a choice.'] }, play: { title: language === 'zh' ? 'NOVA｜做決定 6/6' : 'NOVA | MAKE A CHOICE 6/6', lines: language === 'zh' ? ['再點一次已展開的卡，或用無障礙按鈕出牌。', '看右側資源柱如何改變。'] : ['Tap the expanded card again, or use its access button.', 'Watch the resource pillars change.'] }, complete: { title: language === 'zh' ? 'NOVA｜完成' : 'NOVA | ORBIT COMPLETE', lines: language === 'zh' ? ['你已經會使用這張桌子了。', '每局都能重玩，嘗試不同取捨。'] : ['You know this desk now.', 'Replay any mission and try a different trade-off.'] }, skipped: { title: language === 'zh' ? 'NOVA｜自由探索' : 'NOVA | FREE EXPLORE', lines: language === 'zh' ? ['你隨時可以從無障礙控制重看教學。', '← → 或 A／D 仍然能查看周圍。'] : ['Replay the tutorial from scene controls any time.', '← → or A / D still look around.'] } }; const current = copy[step]; const texture = useMemo(() => makeTutorialTexture(language, current.title, current.lines), [language, current]); useEffect(() => () => texture.dispose(), [texture]); const handleMain = () => { if (step === 'room') onInspectRoom(); if (step === 'complete' || step === 'skipped') onReplay() }; return <group position={[-3.68, .57, 1.64]} rotation={[0, .2, 0]} scale={[.23, .23, .23]} onClick={(event) => { event.stopPropagation(); handleMain() }}><mesh castShadow><boxGeometry args={[4.42, 3.08, .2]} /><meshPhysicalMaterial color="#173944" metalness={.62} roughness={.22} clearcoat={.5} /></mesh><mesh position={[0, 0, .115]}><planeGeometry args={[4.08, 2.7]} /><meshBasicMaterial map={texture} /></mesh><group position={[1.48, -1.08, .21]} onClick={(event) => { event.stopPropagation(); if (step === 'complete' || step === 'skipped') onReplay(); else onSkip() }}><mesh castShadow><boxGeometry args={[.88, .32, .18]} /><meshStandardMaterial color="#d5b261" emissive="#d5b261" emissiveIntensity={.28} /></mesh></group><mesh position={[0, -1.76, -.03]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[2.22, 24]} /><meshBasicMaterial color="#061019" transparent opacity={.2} depthWrite={false} /></mesh></group> }

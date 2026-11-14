@@ -7,7 +7,16 @@
 - NASA Open APIs: [api.nasa.gov](https://api.nasa.gov/)
 - Challenge reference: [Build a Junior Astronaut Mission Trainer](https://www.spaceappschallenge.org/2026/challenges/junior-astronaut-mission-trainer/)
 
-NASA data does not imply NASA endorsement. No NASA logo, personnel, audio, image, or mission artwork is bundled.
+NASA data and public-domain imagery do not imply NASA endorsement. No NASA official insignia or logo (Meatball or Worm) is used.
+
+## NASA public-domain imagery (`public/nasa/`)
+
+Archived from the [NASA Image and Video Library](https://images.nasa.gov/) (`images-api.nasa.gov`) and cataloged in [`public/nasa/nasa-media.json`](public/nasa/nasa-media.json):
+
+- `public/nasa/earth.jpg` — `GSFC_20171208_Archive_e001386` (*Most Amazing High Definition Image of Earth - Blue Marble 2012*)
+- `public/nasa/moon.jpg` — `GSFC_20171208_Archive_e001861` (*Full Moon*)
+- `public/nasa/mars.jpg` — `PIA02005` (*Tharsis Volcanoes and Valles Marineris, Mars*)
+- `public/nasa/cme.jpg` — `PIA21836` (*Bastille Day Solar Flare and a Coronal Mass Ejection*)
 
 ## Code libraries
 

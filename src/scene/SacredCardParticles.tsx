@@ -80,28 +80,36 @@ export function SacredCardParticles({
 }
 
 /**
- * Minecraft-style square pixel cubes floating around each card:
- * bright emerald green when playable, redstone red when blocked/unplayable.
+ * Fine Minecraft-style multi-tone pixel motes floating around each card:
+ * delicate emerald shimmer when playable, fine redstone dust when unplayable.
  */
 export function MinecraftCardStatusParticles({ playable }: { playable: boolean }) {
   const meshRef = useRef<THREE.InstancedMesh>(null)
   const clock = useRef(0)
   const dummy = useMemo(() => new THREE.Object3D(), [])
+  const color = useMemo(() => new THREE.Color(), [])
 
   const cubes = useMemo(
     () =>
-      Array.from({ length: 20 }, (_, i) => {
-        const side = i % 4 // 0: left, 1: right, 2: top, 3: front-lower
+      Array.from({ length: 34 }, (_, i) => {
+        const side = i % 4 // 0: left edge, 1: right edge, 2: top edge, 3: bottom/corner shimmer
         const baseX =
-          side === 0 ? -0.49 : side === 1 ? 0.49 : ((i % 5) - 2) * 0.21
+          side === 0
+            ? -0.45 - (i % 3) * 0.03
+            : side === 1
+              ? 0.45 + (i % 3) * 0.03
+              : ((i % 7) - 3) * 0.14
         return {
           side,
           baseX,
-          phase: (i / 20) * 1.0,
-          speed: 0.45 + (i % 4) * 0.14,
-          size: 0.042 + (i % 3) * 0.012,
-          z: side === 3 ? 0.12 : 0.07 + (i % 3) * 0.035,
-          wobble: (i % 2 === 0 ? 1 : -1) * 0.035,
+          phase: (i / 34) * 1.0,
+          speed: 0.28 + (i % 5) * 0.09,
+          size: 0.015 + (i % 4) * 0.0045,
+          z: 0.04 + (i % 4) * 0.028,
+          wobble: (i % 2 === 0 ? 1 : -1) * (0.018 + (i % 3) * 0.008),
+          driftOut: (side === 0 ? -1 : side === 1 ? 1 : ((i % 3) - 1) * 0.5) * 0.05,
+          tone: i % 4,
+          spin: (i % 3) * 0.7,
         }
       }),
     [],
@@ -110,30 +118,38 @@ export function MinecraftCardStatusParticles({ playable }: { playable: boolean }
   useFrame((_, delta) => {
     if (!meshRef.current) return
     clock.current += delta
+    const palette = playable
+      ? ['#2ee87c', '#7bffb3', '#b8ffd6', '#18c964']
+      : ['#ff384c', '#ff7a85', '#ffb3ba', '#d92136']
+
     for (let i = 0; i < cubes.length; i += 1) {
       const c = cubes[i]
       const t = (clock.current * c.speed + c.phase) % 1
-      const fade = Math.sin(t * Math.PI)
-      const px = c.baseX + Math.sin(clock.current * 2.6 + i) * c.wobble
-      const py = c.side === 2 ? 0.62 + t * 0.38 : -0.54 + t * 1.22
-      dummy.position.set(px, py, c.z)
-      dummy.rotation.set(0, 0, 0) // crisp axis-aligned Minecraft pixel cubes
-      dummy.scale.setScalar(Math.max(0.001, c.size * (0.45 + fade * 0.9)))
+      const fade = Math.pow(Math.sin(t * Math.PI), 1.3)
+      const px = c.baseX + Math.sin(clock.current * 2.1 + i * 1.3) * c.wobble + t * c.driftOut
+      const py =
+        c.side === 2
+          ? 0.61 + t * 0.42
+          : c.side === 3
+            ? -0.58 + t * 0.48
+            : -0.52 + t * 1.24
+      dummy.position.set(px, py, c.z + Math.cos(clock.current * 1.8 + i) * 0.015)
+      dummy.rotation.set(c.spin * t, c.spin * 0.5, 0)
+      dummy.scale.setScalar(Math.max(0.001, c.size * (0.25 + fade * 1.05)))
       dummy.updateMatrix()
       meshRef.current.setMatrixAt(i, dummy.matrix)
+
+      color.set(palette[c.tone])
+      meshRef.current.setColorAt(i, color)
     }
     meshRef.current.instanceMatrix.needsUpdate = true
+    if (meshRef.current.instanceColor) meshRef.current.instanceColor.needsUpdate = true
   })
 
   return (
-    <instancedMesh ref={meshRef} args={[undefined, undefined, 20]}>
+    <instancedMesh ref={meshRef} args={[undefined, undefined, 34]}>
       <boxGeometry args={[1, 1, 1]} />
-      <meshBasicMaterial
-        color={playable ? '#3dff8b' : '#ff4757'}
-        transparent
-        opacity={0.92}
-        toneMapped={false}
-      />
+      <meshBasicMaterial vertexColors transparent opacity={0.88} toneMapped={false} />
     </instancedMesh>
   )
 }

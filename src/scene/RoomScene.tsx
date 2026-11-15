@@ -193,6 +193,7 @@ export function RoomScene({
   }, [beatKey, fullNarratorText.length, language, previewMode, reducedMotion])
 
   const startNarratorDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    event.stopPropagation()
     if ((event.target as HTMLElement).closest('button')) return
     event.currentTarget.setPointerCapture(event.pointerId)
     narratorDragRef.current = {
@@ -205,6 +206,7 @@ export function RoomScene({
   }
 
   const moveNarratorDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    event.stopPropagation()
     if (!narratorDragRef.current.active) return
     const dx = event.clientX - narratorDragRef.current.startX
     const dy = event.clientY - narratorDragRef.current.startY
@@ -254,6 +256,7 @@ export function RoomScene({
       style={{ width: '100%', height: '100%', position: 'relative' }}
       onPointerDown={(event) => {
         if (screenId || selected || focus) return
+        if ((event.target as HTMLElement | null)?.closest('.narrator-float-window, .hud-narrator-wrap')) return
         dragState.current = { active: true, lastX: event.clientX, lastY: event.clientY, moved: false }
       }}
       onPointerMove={(event) => {
@@ -470,6 +473,9 @@ export function RoomScene({
           className="narrator-float-window"
           role="region"
           aria-label={beat.title}
+          onPointerDown={(event) => event.stopPropagation()}
+          onPointerMove={(event) => event.stopPropagation()}
+          onPointerUp={(event) => event.stopPropagation()}
           style={{
             transform: `translate3d(calc(-50% + ${narratorPos.x}px), ${narratorPos.y}px, 0)`,
           }}

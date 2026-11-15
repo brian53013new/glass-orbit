@@ -33,6 +33,8 @@ export function CardMesh({
   const prevAnim = useRef(animState)
   const { size } = useThree()
   const compact = size.width < 640
+  const tablet = size.width >= 640 && size.width < 1024
+  const portraitTablet = tablet && size.width < size.height
   const targetPosition = useMemo(() => new THREE.Vector3(), [])
   const targetScaleVector = useMemo(() => new THREE.Vector3(), [])
   const texture = useMemo(() => makeCardTexture(card, language, selected, disabled), [card, language, selected, disabled])
@@ -78,12 +80,21 @@ export function CardMesh({
     const moving = selected && detailState === 'moving'
     const lifting = selected && detailState === 'lifting'
 
-    if (expanded) targetPosition.set(compact ? -0.68 : -1.55, compact ? 1.85 : 1.56, compact ? 2.2 : 2.48)
+    if (expanded)
+      targetPosition.set(
+        compact || portraitTablet ? 0 : tablet ? -1.16 : -1.55,
+        compact ? 2.95 : portraitTablet ? 2.78 : 1.56,
+        compact ? 2.28 : 2.48,
+      )
     else if (moving) targetPosition.set(x * 0.34, restingY + 0.76, 1.38)
     else if (lifting) targetPosition.set(x, restingY + 0.38, 0.76)
     else targetPosition.set(x, hovered ? restingY + 0.18 : restingY, 0.64)
 
-    const targetScale = expanded ? baseScale * (compact ? 1.12 : 1.24) : moving ? baseScale * 1.12 : baseScale
+    const targetScale = expanded
+      ? baseScale * (compact ? 0.88 : portraitTablet ? 0.92 : tablet ? 1.02 : 1.24)
+      : moving
+        ? baseScale * 1.12
+        : baseScale
     targetScaleVector.setScalar(targetScale)
     ref.current.position.lerp(targetPosition, expanded ? 0.16 : 0.18)
     ref.current.scale.lerp(targetScaleVector, 0.15)

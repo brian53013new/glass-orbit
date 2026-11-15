@@ -72,15 +72,25 @@ export function DetailPlaque3D({
 }) {
   const { size } = useThree()
   const compact = size.width < 640
+  const tablet = size.width >= 640 && size.width < 1024
+  const portraitTablet = tablet && size.width < size.height
   const texture = useMemo(() => makeDetailStripTexture(card, language, mission), [card, language, mission])
   useEffect(() => () => texture.dispose(), [texture])
   const visible = detailState === 'moving' || detailState === 'expanded'
+  const pos: [number, number, number] = compact
+    ? [0, 0.94, 2.4]
+    : portraitTablet
+      ? [0, 0.94, 2.48]
+      : tablet
+        ? [0.96, 1.56, 2.48]
+        : [1.22, 1.56, 2.48]
+  const s = compact ? 0.44 : portraitTablet ? 0.52 : tablet ? 0.66 : 0.82
   return (
     <group
       visible={visible}
-      position={compact ? [0.68, 1.85, 2.22] : [1.22, 1.56, 2.48]}
-      rotation={[0, -0.06, 0]}
-      scale={compact ? [0.46, 0.46, 0.46] : [0.82, 0.82, 0.82]}
+      position={pos}
+      rotation={[0, compact || portraitTablet ? 0 : -0.06, 0]}
+      scale={[s, s, s]}
     >
       <mesh castShadow>
         <boxGeometry args={[3.5, 2.52, 0.14]} />

@@ -197,7 +197,7 @@ export function RoomScene({
         if (!dragState.current.active || screenId || selected || focus) return
         const dx = event.clientX - dragState.current.lastX
         const dy = event.clientY - dragState.current.lastY
-        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dragState.current.moved = true
+        if (Math.abs(dx) > 8 || Math.abs(dy) > 8) dragState.current.moved = true
         dragState.current.lastX = event.clientX
         dragState.current.lastY = event.clientY
         setLocalYaw((value) => value - dx * 0.0055)

@@ -88,6 +88,14 @@ function App() {
   }
 
   useEffect(() => {
+    return () => {
+      if (returnTimer.current) window.clearTimeout(returnTimer.current)
+      screenTimers.current.forEach((t) => window.clearTimeout(t))
+      playTimers.current.forEach((t) => window.clearTimeout(t))
+    }
+  }, [])
+
+  useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)')
     const sync = () => setReducedMotion(media.matches)
     sync()
@@ -154,9 +162,9 @@ function App() {
     return { ...next, outcome, events: [...next.events, { type: 'finish_run', outcome }] }
   }
 
-  const commitPlayCard = (chosen: CardDefinition) => {
-    let drawnId: string | null = null
+  const commitPlayCard = (chosen: CardDefinition, expectedDrawnId: string | null) => {
     setRun((current) => {
+      if (current.outcome !== 'playing' || !current.hand.includes(chosen.id)) return current
       const nextResources = { ...current.resources }
       for (const [key, value] of Object.entries(chosen.cost) as [ResourceKey, number][]) nextResources[key] -= value
       ;(['power', 'lifeSupport', 'shield'] as ResourceKey[]).forEach((key) => {
@@ -168,8 +176,8 @@ function App() {
         nextResources.shield += 1
       }
       // Draw replacement card from remaining deck into the played hand slot
-      const [drawn, ...restDeck] = current.deck
-      drawnId = drawn ?? null
+      const drawn = expectedDrawnId && current.deck.includes(expectedDrawnId) ? expectedDrawnId : current.deck[0]
+      const restDeck = drawn ? current.deck.filter((id) => id !== drawn) : current.deck
       const nextHand = drawn
         ? current.hand.map((id) => (id === chosen.id ? drawn : id))
         : current.hand.filter((id) => id !== chosen.id)
@@ -198,27 +206,29 @@ function App() {
         next.comms >= event.commsTarget
       return allTargetsMet || next.turns >= 5 ? finish(next) : next
     })
-    return drawnId
   }
 
   const playCard = (chosen: CardDefinition) => {
-    if (playingCardId) return
+    if (playingCardId || run.outcome !== 'playing') return
     playTimers.current.forEach((t) => window.clearTimeout(t))
     playTimers.current = []
-    closeDetail()
+    if (returnTimer.current) window.clearTimeout(returnTimer.current)
+    setSelectedId(null)
+    setDetailState('closed')
     soundtrack.playCardChime()
 
+    const expectedDrawnId = run.deck[0] ?? null
     if (reducedMotion) {
-      commitPlayCard(chosen)
+      commitPlayCard(chosen, expectedDrawnId)
       return
     }
 
     setPlayingCardId(chosen.id)
     const t1 = window.setTimeout(() => {
-      const drawnId = commitPlayCard(chosen)
+      commitPlayCard(chosen, expectedDrawnId)
       setPlayingCardId(null)
-      if (drawnId) {
-        setDrawingCardId(drawnId)
+      if (expectedDrawnId) {
+        setDrawingCardId(expectedDrawnId)
         const t2 = window.setTimeout(() => setDrawingCardId(null), 750)
         playTimers.current = [t2]
       }
@@ -231,6 +241,7 @@ function App() {
   }
 
   const interactWithWorldObject = (objectId: string) => {
+    if (playingCardId) return
     const chosen = cards.find((item) => item.id === objectId)
     if (!chosen) return
     const missingPrerequisite = chosen.prerequisites.some((id) => !run.played.includes(id))
@@ -239,12 +250,16 @@ function App() {
     )
     if (selectedId === objectId && detailState === 'expanded' && !missingPrerequisite && !lacksCost && run.outcome === 'playing') {
       playCard(chosen)
-    } else if (selectedId !== objectId) {
+    } else if (selectedId !== objectId || detailState === 'returning' || detailState === 'closed') {
       setSelectedId(objectId)
     }
   }
 
   const replay = (newEvent: boolean) => {
+    playTimers.current.forEach((t) => window.clearTimeout(t))
+    playTimers.current = []
+    setPlayingCardId(null)
+    setDrawingCardId(null)
     const nextSeed = newEvent ? (seed + 1) % missionEvents.length : seed
     setPrevious(run)
     setSeed(nextSeed)

@@ -280,8 +280,26 @@
   margin-bottom: 0;
 }
 
-.in-mission .mission-room { height: calc(100vh - 1px); min-height: 640px; border: 0; background: #070f27; }
+.in-mission .mission-room { height: 100dvh; min-height: 520px; border: 0; background: #070f27; }
 .in-mission .control-deck { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; margin: 0; padding: 0; pointer-events: none; }
-.in-mission .orbit-canvas { image-rendering: auto; }
+.in-mission .orbit-canvas { image-rendering: auto; touch-action: none; }
 
 .in-mission .app-shell { background: #070f27; }
+
+@media (max-width: 900px) {
+  .cockpit-launch-card { padding: 20px 18px 16px; max-height: 90dvh; overflow-y: auto; }
+  .cockpit-steps { grid-template-columns: 1fr; gap: 8px; }
+  .hud-narrator-wrap { width: 96vw; max-width: 96vw; }
+  .hud-pill-bar { padding: 6px 10px; gap: 6px; font-size: 11.5px; }
+  .hud-pill-bar button { padding: 6px 10px; min-height: 32px; touch-action: manipulation; }
+  .hud-pill-step { max-width: 220px; }
+}
+
+@media (max-width: 640px) {
+  .cockpit-title { font-size: 22px; }
+  .cockpit-subtitle { font-size: 13.5px; }
+  .cockpit-actions { flex-direction: column; align-items: stretch; }
+  .cockpit-start-btn, .cockpit-secondary-btn { width: 100%; text-align: center; }
+  .hud-pill-step { max-width: 160px; }
+  .hud-narrator-drawer { padding: 10px 12px; max-height: 44dvh; overflow-y: auto; }
+}

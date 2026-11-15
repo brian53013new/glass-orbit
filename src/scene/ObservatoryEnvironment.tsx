@@ -55,7 +55,9 @@ export function CameraRig({
   viewYaw: number
   viewPitch: number
 }) {
-  const { camera, pointer } = useThree()
+  const { camera, pointer, size } = useThree()
+  const aspect = size.width / Math.max(1, size.height)
+  const narrowFactor = aspect < 1.25 ? (1.25 - aspect) * 4.2 : 0
   const target = useRef(new THREE.Vector3(0, 6.4, 17.5))
   const lookAt = useRef(new THREE.Vector3(0, 1.35, 0))
   const dampedYaw = useRef(0)
@@ -87,14 +89,14 @@ export function CameraRig({
       target.current.set(...PLANET_LAYOUT[focus].cam)
       lookAt.current.set(...PLANET_LAYOUT[focus].pos)
     } else if (cardInspecting) {
-      target.current.set(0, 1.72, 7.25)
-      lookAt.current.set(-0.08, 1.48, 2.48)
+      target.current.set(0, size.width < 640 ? 1.82 : 1.72, (size.width < 640 ? 8.3 : 7.25) + narrowFactor * 0.45)
+      lookAt.current.set(size.width < 640 ? 0 : -0.08, size.width < 640 ? 1.62 : 1.48, 2.48)
     } else {
       const parallaxYaw = reducedMotion ? 0 : pointer.x * 0.04
       const parallaxPitch = reducedMotion ? 0 : pointer.y * 0.03
       const yaw = dampedYaw.current + parallaxYaw
       const pitch = THREE.MathUtils.clamp(dampedPitch.current + parallaxPitch, -0.45, 0.92)
-      const radius = 9.8
+      const radius = 9.8 + narrowFactor
       const horiz = Math.cos(pitch) * radius
       target.current.set(
         Math.sin(yaw) * horiz,

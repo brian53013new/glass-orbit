@@ -3,6 +3,8 @@ import * as THREE from 'three'
 import { useEffect, useRef, useState } from 'react'
 import { microCourses } from '../data/micro-courses'
 import { buildMissionGoalSummary, buildNarratorBeat } from '../game/narrator'
+import { formatFeedBadge, type LiveDonkiStatus } from '../game/nasaLiveService'
+import type { CoachAnalysis } from '../game/missionCoach'
 import { cards, type CardDetailState, type Language, type MissionEvent, type PlanetName, type RunState, type ScreenFocusState, type ScreenId, type TutorialStep } from '../types'
 import { AsteroidBelt3D, CameraRig, DeepSpaceSky, MosaicGlassTiles, MuseumRoom, ObservatoryFloor, PixelStars, Planet } from './ObservatoryEnvironment'
 import { Desk, DeskViewArrow3D, DetailPlaque3D, LanguageDial3D, ReplayConsole3D, ResourcePillars3D, TutorialBeacon3D } from './DeskAndProps'
@@ -38,6 +40,11 @@ export function RoomScene({
   previewMode = false,
   musicOn = true,
   onToggleMusic,
+  perfMode = false,
+  onTogglePerf,
+  liveDonki,
+  coach = null,
+  onExportReport,
   playingCardId = null,
   drawingCardId = null,
 }: {
@@ -69,6 +76,11 @@ export function RoomScene({
   previewMode?: boolean
   musicOn?: boolean
   onToggleMusic?: () => void
+  perfMode?: boolean
+  onTogglePerf?: () => void
+  liveDonki?: LiveDonkiStatus
+  coach?: CoachAnalysis | null
+  onExportReport?: (format: 'json' | 'csv') => void
   playingCardId?: string | null
   drawingCardId?: string | null
 }) {
@@ -290,8 +302,8 @@ export function RoomScene({
     >
       <Canvas
         className="orbit-canvas"
-        shadows
-        dpr={compact ? [1, 1.5] : [1, 2]}
+        shadows={!perfMode}
+        dpr={perfMode ? 1 : compact ? [1, 1.5] : [1, 2]}
         gl={{ antialias: true, powerPreference: 'high-performance' }}
         camera={{ position: [0, 3.25, 10.2], fov: 43 }}
         onCreated={({ gl }) => {
@@ -436,6 +448,7 @@ export function RoomScene({
               hovered={hovered === item.id}
               disabled={isDisabled}
               playable={playable}
+              perfMode={perfMode}
               animState={playingCardId === item.id ? 'playing' : drawingCardId === item.id ? 'drawing' : 'idle'}
               onSelect={onSelect}
               onHover={onHover}
@@ -453,6 +466,14 @@ export function RoomScene({
       <>
       <div className="hud-narrator-wrap">
         <div className="hud-pill-bar" aria-label="Glass Orbit HUD">
+          {liveDonki && (
+            <span
+              className={`hud-feed-badge is-${liveDonki.mode}`}
+              title={liveDonki.latestActivityId ?? liveDonki.fetchedAtUtc}
+            >
+              {formatFeedBadge(liveDonki.mode, language)}
+            </span>
+          )}
           <span className="hud-pill-disclaimer">{buildMissionGoalSummary(language, mission, run)}</span>
           <button
             className={`hud-narrator-toggle ${!narratorExpanded ? 'is-collapsed' : ''}`}
@@ -483,6 +504,11 @@ export function RoomScene({
           {onToggleMusic && (
             <button onClick={onToggleMusic}>
               {musicOn ? (language === 'zh' ? '♪ 音樂 開' : '♪ BGM ON') : language === 'zh' ? '♪ 音樂 關' : '♪ BGM OFF'}
+            </button>
+          )}
+          {onTogglePerf && (
+            <button onClick={onTogglePerf} aria-pressed={perfMode}>
+              {perfMode ? (language === 'zh' ? '⚡ 節能 開' : '⚡ Perf ON') : language === 'zh' ? '⚡ 節能 關' : '⚡ Perf OFF'}
             </button>
           )}
           <button onClick={onOpenSource}>{language === 'zh' ? 'NASA 資料來源' : 'NASA Source'}</button>
@@ -552,6 +578,34 @@ export function RoomScene({
                 )
               })}
             </div>
+            {coach && run.outcome !== 'playing' && (
+              <div className="narrator-coach-box">
+                <div className="narrator-coach-head">
+                  <span>
+                    {language === 'zh' ? 'NOVA 任務複盤' : 'NOVA Debrief'} · {coach.styleLabel[language]}
+                  </span>
+                  <span>
+                    {language === 'zh' ? `平均決策 ${coach.avgDecisionSec}s` : `Avg ${coach.avgDecisionSec}s/turn`}
+                  </span>
+                </div>
+                <p className="narrator-coach-summary">{coach.causalSummary[language]}</p>
+                <ul className="narrator-coach-tips">
+                  {coach.tips[language].map((tip, idx) => (
+                    <li key={idx}>{tip}</li>
+                  ))}
+                </ul>
+                {onExportReport && (
+                  <div className="narrator-export-row">
+                    <button type="button" onClick={() => onExportReport('json')}>
+                      {language === 'zh' ? '匯出 JSON 報告' : 'Export JSON'}
+                    </button>
+                    <button type="button" onClick={() => onExportReport('csv')}>
+                      {language === 'zh' ? '匯出 CSV 紀錄' : 'Export CSV'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
             <div className="narrator-footer">
               <span className="narrator-how-hint">
                 {language === 'zh'

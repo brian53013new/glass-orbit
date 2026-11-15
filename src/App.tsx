@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { RoomScene } from './scene/RoomScene'
 import { soundtrack } from './game/soundtrack'
 import { CHALLENGE_RESOURCES_URL, OFFICIAL_RESOURCES } from './data/official-resources'
+import { fetchLiveDonkiStatus, type LiveDonkiStatus } from './game/nasaLiveService'
+import { analyzeMissionRun, downloadMissionReport } from './game/missionCoach'
 import {
   cards,
   initialRun,
@@ -41,8 +43,18 @@ function App() {
   const [reducedMotion, setReducedMotion] = useState(false)
   const [compact, setCompact] = useState(() => window.innerWidth < 640)
   const [musicOn, setMusicOn] = useState(true)
+  const [perfMode, setPerfMode] = useState(false)
   const [playingCardId, setPlayingCardId] = useState<string | null>(null)
   const [drawingCardId, setDrawingCardId] = useState<string | null>(null)
+  const [decisionTimesMs, setDecisionTimesMs] = useState<number[]>([])
+  const [liveDonki, setLiveDonki] = useState<LiveDonkiStatus>(() => ({
+    mode: 'OFFLINE_SNAPSHOT',
+    latestActivityId: missionEvents[0].record.activityID,
+    latestSpeedKmS: missionEvents[0].speed,
+    latestStartTime: missionEvents[0].record.startTime,
+    fetchedAtUtc: new Date().toISOString(),
+  }))
+  const turnStartRef = useRef<number>(0)
   const returnTimer = useRef<number | null>(null)
   const screenTimers = useRef<number[]>([])
   const playTimers = useRef<number[]>([])
@@ -89,6 +101,8 @@ function App() {
   }
 
   useEffect(() => {
+    turnStartRef.current = performance.now()
+    fetchLiveDonkiStatus(missionEvents[0]).then(setLiveDonki)
     return () => {
       if (returnTimer.current) window.clearTimeout(returnTimer.current)
       screenTimers.current.forEach((t) => window.clearTimeout(t))
@@ -211,6 +225,10 @@ function App() {
 
   const playCard = (chosen: CardDefinition) => {
     if (playingCardId || run.outcome !== 'playing') return
+    const now = performance.now()
+    const elapsed = turnStartRef.current ? Math.round(now - turnStartRef.current) : 3000
+    setDecisionTimesMs((prev) => [...prev, elapsed])
+    turnStartRef.current = now
     playTimers.current.forEach((t) => window.clearTimeout(t))
     playTimers.current = []
     if (returnTimer.current) window.clearTimeout(returnTimer.current)
@@ -261,6 +279,8 @@ function App() {
     playTimers.current = []
     setPlayingCardId(null)
     setDrawingCardId(null)
+    setDecisionTimesMs([])
+    turnStartRef.current = performance.now()
     const nextSeed = newEvent ? (seed + 1) % missionEvents.length : seed
     setPrevious(run)
     setSeed(nextSeed)
@@ -308,6 +328,8 @@ function App() {
       : T('任務結算：比較這一局的選擇，再試一個新策略。', 'Mission complete: compare this run, then try a new strategy.')
   }
 
+  const coach = run.outcome !== 'playing' ? analyzeMissionRun(run, event, decisionTimesMs) : null
+
   return (
     <main className={`app-shell ${started ? 'in-mission' : 'at-launch'}`}>
       <header className="topbar">
@@ -354,6 +376,14 @@ function App() {
           onOpenBrief={() => setStarted(false)}
           previewMode={!started}
           musicOn={musicOn}
+          perfMode={perfMode}
+          onTogglePerf={() => setPerfMode((v) => !v)}
+          liveDonki={liveDonki}
+          coach={coach}
+          onExportReport={(format) => {
+            const reportCoach = coach ?? analyzeMissionRun(run, event, decisionTimesMs)
+            downloadMissionReport(format, run, event, liveDonki, reportCoach)
+          }}
           playingCardId={playingCardId}
           drawingCardId={drawingCardId}
           onToggleMusic={() => {

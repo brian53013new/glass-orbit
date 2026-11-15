@@ -15,6 +15,7 @@ export function CardMesh({
   disabled,
   playable = true,
   animState = 'idle',
+  perfMode = false,
   onSelect,
   onHover,
 }: {
@@ -27,6 +28,7 @@ export function CardMesh({
   disabled: boolean
   playable?: boolean
   animState?: 'idle' | 'playing' | 'drawing'
+  perfMode?: boolean
   onSelect: (id: string) => void
   onHover: (id: string | null) => void
 }) {
@@ -127,7 +129,7 @@ export function CardMesh({
           if (!disabled && animState === 'idle') onSelect(card.id)
         }}
       >
-        {animState === 'idle' && <MinecraftCardStatusParticles playable={playable && !disabled} />}
+        {animState === 'idle' && !perfMode && <MinecraftCardStatusParticles playable={playable && !disabled} />}
         <mesh castShadow>
           <boxGeometry args={[0.88, 1.2, 0.11]} />
           <meshStandardMaterial

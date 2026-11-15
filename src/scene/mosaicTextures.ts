@@ -53,8 +53,8 @@ export function makeCrispMosaicTexture(canvas: HTMLCanvasElement) {
   texture.colorSpace = THREE.SRGBColorSpace
   texture.generateMipmaps = true
   texture.magFilter = THREE.LinearFilter
-  texture.minFilter = THREE.LinearMipmapLinearFilter
-  texture.anisotropy = 8
+  texture.minFilter = THREE.LinearMipmapNearestFilter
+  texture.anisotropy = 16
   texture.needsUpdate = true
   return texture
 }
@@ -113,14 +113,14 @@ export function makeWorldPanelTexture(title: string, lines: string[]) {
   const w = 520
   const h = 360
   const canvas = document.createElement('canvas')
-  canvas.width = w * 3
-  canvas.height = h * 3
+  canvas.width = w * 4
+  canvas.height = h * 4
   const ctx = canvas.getContext('2d')!
-  ctx.scale(3, 3)
+  ctx.scale(4, 4)
 
   drawMosaicBackdrop(ctx, w, h, '#ffffff', 18)
   ctx.strokeStyle = '#ffffff'
-  ctx.lineWidth = 5
+  ctx.lineWidth = 4
   ctx.strokeRect(3, 3, w - 6, h - 6)
   ctx.fillStyle = '#181818'
   ctx.fillRect(18, 20, w - 36, 40)
@@ -128,11 +128,11 @@ export function makeWorldPanelTexture(title: string, lines: string[]) {
   ctx.lineWidth = 2
   ctx.strokeRect(18, 20, w - 36, 40)
   ctx.fillStyle = '#ffffff'
-  ctx.font = `800 22px ${DISPLAY_FONT}`
+  ctx.font = `700 21px ${DISPLAY_FONT}`
   ctx.fillText(title, 30, 47)
 
   ctx.fillStyle = '#ffffff'
-  ctx.font = `700 18px ${DISPLAY_FONT}`
+  ctx.font = `500 17px ${DISPLAY_FONT}`
   let y = 92
   lines
     .flatMap((line) => wrapCanvasText(ctx, line, w - 56))
@@ -143,7 +143,7 @@ export function makeWorldPanelTexture(title: string, lines: string[]) {
     })
 
   ctx.fillStyle = '#ffffff'
-  ctx.font = `700 13px ${MONO_FONT}`
+  ctx.font = `600 12.5px ${MONO_FONT}`
   ctx.fillText('ESC / TAP EMPTY SPACE TO RETURN', 28, h - 22)
   return makeCrispMosaicTexture(canvas)
 }
@@ -152,17 +152,17 @@ export function makeButtonLabelTexture(label: string, bg = '#181818', fg = '#fff
   const w = 340
   const h = 84
   const canvas = document.createElement('canvas')
-  canvas.width = w * 2
-  canvas.height = h * 2
+  canvas.width = w * 4
+  canvas.height = h * 4
   const ctx = canvas.getContext('2d')!
-  ctx.scale(2, 2)
+  ctx.scale(4, 4)
   ctx.fillStyle = bg
   ctx.fillRect(0, 0, w, h)
   ctx.strokeStyle = '#ffffff'
-  ctx.lineWidth = 4
+  ctx.lineWidth = 3.5
   ctx.strokeRect(2, 2, w - 4, h - 4)
   ctx.fillStyle = fg
-  ctx.font = `800 26px ${DISPLAY_FONT}`
+  ctx.font = `700 24px ${DISPLAY_FONT}`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.fillText(label, w / 2, h / 2 + 1)

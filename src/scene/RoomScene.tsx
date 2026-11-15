@@ -280,7 +280,7 @@ export function RoomScene({
       <Canvas
         className="orbit-canvas"
         shadows
-        dpr={compact ? 1.25 : 1.5}
+        dpr={compact ? [1, 1.5] : [1, 2]}
         gl={{ antialias: true, powerPreference: 'high-performance' }}
         camera={{ position: [0, 3.25, 10.2], fov: 43 }}
         onCreated={({ gl }) => {

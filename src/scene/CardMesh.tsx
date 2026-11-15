@@ -2,7 +2,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useEffect, useMemo, useRef } from 'react'
 import { makeCardTexture } from './mosaicTextures'
-import { SacredCardParticles } from './SacredCardParticles'
+import { MinecraftCardStatusParticles, SacredCardParticles } from './SacredCardParticles'
 import type { CardDefinition, CardDetailState, Language } from '../types'
 
 export function CardMesh({
@@ -127,6 +127,7 @@ export function CardMesh({
           if (!disabled && animState === 'idle') onSelect(card.id)
         }}
       >
+        {animState === 'idle' && <MinecraftCardStatusParticles playable={playable && !disabled} />}
         <mesh castShadow>
           <boxGeometry args={[0.88, 1.2, 0.11]} />
           <meshStandardMaterial

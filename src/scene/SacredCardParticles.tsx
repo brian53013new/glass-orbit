@@ -78,3 +78,62 @@ export function SacredCardParticles({
     </instancedMesh>
   )
 }
+
+/**
+ * Minecraft-style square pixel cubes floating around each card:
+ * bright emerald green when playable, redstone red when blocked/unplayable.
+ */
+export function MinecraftCardStatusParticles({ playable }: { playable: boolean }) {
+  const meshRef = useRef<THREE.InstancedMesh>(null)
+  const clock = useRef(0)
+  const dummy = useMemo(() => new THREE.Object3D(), [])
+
+  const cubes = useMemo(
+    () =>
+      Array.from({ length: 20 }, (_, i) => {
+        const side = i % 4 // 0: left, 1: right, 2: top, 3: front-lower
+        const baseX =
+          side === 0 ? -0.49 : side === 1 ? 0.49 : ((i % 5) - 2) * 0.21
+        return {
+          side,
+          baseX,
+          phase: (i / 20) * 1.0,
+          speed: 0.45 + (i % 4) * 0.14,
+          size: 0.042 + (i % 3) * 0.012,
+          z: side === 3 ? 0.12 : 0.07 + (i % 3) * 0.035,
+          wobble: (i % 2 === 0 ? 1 : -1) * 0.035,
+        }
+      }),
+    [],
+  )
+
+  useFrame((_, delta) => {
+    if (!meshRef.current) return
+    clock.current += delta
+    for (let i = 0; i < cubes.length; i += 1) {
+      const c = cubes[i]
+      const t = (clock.current * c.speed + c.phase) % 1
+      const fade = Math.sin(t * Math.PI)
+      const px = c.baseX + Math.sin(clock.current * 2.6 + i) * c.wobble
+      const py = c.side === 2 ? 0.62 + t * 0.38 : -0.54 + t * 1.22
+      dummy.position.set(px, py, c.z)
+      dummy.rotation.set(0, 0, 0) // crisp axis-aligned Minecraft pixel cubes
+      dummy.scale.setScalar(Math.max(0.001, c.size * (0.45 + fade * 0.9)))
+      dummy.updateMatrix()
+      meshRef.current.setMatrixAt(i, dummy.matrix)
+    }
+    meshRef.current.instanceMatrix.needsUpdate = true
+  })
+
+  return (
+    <instancedMesh ref={meshRef} args={[undefined, undefined, 20]}>
+      <boxGeometry args={[1, 1, 1]} />
+      <meshBasicMaterial
+        color={playable ? '#3dff8b' : '#ff4757'}
+        transparent
+        opacity={0.92}
+        toneMapped={false}
+      />
+    </instancedMesh>
+  )
+}

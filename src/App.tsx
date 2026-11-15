@@ -804,6 +804,34 @@ function App() {
           </div>
         </aside>
       )}
+
+      <footer
+        style={{
+          position: 'fixed',
+          bottom: 8,
+          right: 14,
+          zIndex: 40,
+          fontSize: 10,
+          letterSpacing: '0.08em',
+          color: 'rgba(226, 232, 240, 0.72)',
+          background: 'rgba(10, 15, 28, 0.55)',
+          backdropFilter: 'blur(6px)',
+          padding: '4px 10px',
+          borderRadius: 999,
+          border: '1px solid rgba(148, 163, 184, 0.2)',
+          pointerEvents: 'auto',
+        }}
+      >
+        © 2026 Brian&amp;Code. All Rights Reserved. ·{' '}
+        <a
+          href="https://brian53013new.github.io/Brian-Code-Official-website/"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: '#93c5fd', textDecoration: 'underline', textUnderlineOffset: 2 }}
+        >
+          {T('Brian&Code 官方網站', 'Brian&Code Official Website')}
+        </a>
+      </footer>
     </main>
   )
 }

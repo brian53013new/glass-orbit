@@ -40,8 +40,11 @@ function App() {
   const [reducedMotion, setReducedMotion] = useState(false)
   const [compact, setCompact] = useState(() => window.innerWidth < 640)
   const [musicOn, setMusicOn] = useState(true)
+  const [playingCardId, setPlayingCardId] = useState<string | null>(null)
+  const [drawingCardId, setDrawingCardId] = useState<string | null>(null)
   const returnTimer = useRef<number | null>(null)
   const screenTimers = useRef<number[]>([])
+  const playTimers = useRef<number[]>([])
 
   const closeDetail = () => {
     if (!selectedId) return
@@ -151,7 +154,8 @@ function App() {
     return { ...next, outcome, events: [...next.events, { type: 'finish_run', outcome }] }
   }
 
-  const playCard = (chosen: CardDefinition) => {
+  const commitPlayCard = (chosen: CardDefinition) => {
+    let drawnId: string | null = null
     setRun((current) => {
       const nextResources = { ...current.resources }
       for (const [key, value] of Object.entries(chosen.cost) as [ResourceKey, number][]) nextResources[key] -= value
@@ -165,6 +169,7 @@ function App() {
       }
       // Draw replacement card from remaining deck into the played hand slot
       const [drawn, ...restDeck] = current.deck
+      drawnId = drawn ?? null
       const nextHand = drawn
         ? current.hand.map((id) => (id === chosen.id ? drawn : id))
         : current.hand.filter((id) => id !== chosen.id)
@@ -193,8 +198,32 @@ function App() {
         next.comms >= event.commsTarget
       return allTargetsMet || next.turns >= 5 ? finish(next) : next
     })
+    return drawnId
+  }
+
+  const playCard = (chosen: CardDefinition) => {
+    if (playingCardId) return
+    playTimers.current.forEach((t) => window.clearTimeout(t))
+    playTimers.current = []
     closeDetail()
     soundtrack.playCardChime()
+
+    if (reducedMotion) {
+      commitPlayCard(chosen)
+      return
+    }
+
+    setPlayingCardId(chosen.id)
+    const t1 = window.setTimeout(() => {
+      const drawnId = commitPlayCard(chosen)
+      setPlayingCardId(null)
+      if (drawnId) {
+        setDrawingCardId(drawnId)
+        const t2 = window.setTimeout(() => setDrawingCardId(null), 750)
+        playTimers.current = [t2]
+      }
+    }, 680)
+    playTimers.current = [t1]
   }
 
   const play = () => {
@@ -309,6 +338,8 @@ function App() {
           onOpenBrief={() => setStarted(false)}
           previewMode={!started}
           musicOn={musicOn}
+          playingCardId={playingCardId}
+          drawingCardId={drawingCardId}
           onToggleMusic={() => {
             setMusicOn((prev) => {
               const next = !prev

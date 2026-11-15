@@ -38,6 +38,8 @@ export function RoomScene({
   previewMode = false,
   musicOn = true,
   onToggleMusic,
+  playingCardId = null,
+  drawingCardId = null,
 }: {
   language: Language
   selected: string | null
@@ -67,6 +69,8 @@ export function RoomScene({
   previewMode?: boolean
   musicOn?: boolean
   onToggleMusic?: () => void
+  playingCardId?: string | null
+  drawingCardId?: string | null
 }) {
   const current = cards.find((item) => item.id === selected) ?? null
   const course = microCourses.find((item) => item.eventId === mission.record.activityID) ?? microCourses[0]
@@ -346,6 +350,7 @@ export function RoomScene({
             detailState={detailState}
             hovered={hovered === item.id}
             disabled={played.includes(item.id)}
+            animState={playingCardId === item.id ? 'playing' : drawingCardId === item.id ? 'drawing' : 'idle'}
             onSelect={onSelect}
             onHover={onHover}
           />

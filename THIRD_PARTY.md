@@ -1,13 +1,19 @@
 # Sources and third-party notices
 
-## NASA data
+## NASA & Partner Agency Data (CSA)
 
 - NASA DONKI data is preserved as a raw offline snapshot with its request, retrieval UTC, HTTP status, SHA-256, and limitations in [`src/data/manifest.json`](src/data/manifest.json).
-- Official data page: [DONKI](https://ccmc.gsfc.nasa.gov/tools/DONKI/)
-- NASA Open APIs: [api.nasa.gov](https://api.nasa.gov/)
-- Challenge reference: [Build a Junior Astronaut Mission Trainer](https://www.spaceappschallenge.org/2026/challenges/junior-astronaut-mission-trainer/)
+- All 7 challenge-referenced official resources are cataloged in [`src/data/official-resources.ts`](src/data/official-resources.ts) and surfaced in-game under **NASA Source**:
+  - [NASA Open APIs](https://api.nasa.gov/)
+  - [Space Weather Database Of Notifications, Knowledge, Information (DONKI)](https://ccmc.gsfc.nasa.gov/tools/DONKI/)
+  - [NASA Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/) ([search API](https://osdr.nasa.gov/osdr/data/search?term=KEYWORD))
+  - [RadLab (OSDR Radiation Dosimetry Database)](https://visualization.osdr.nasa.gov/radlab/gui/data-api/)
+  - [Mars Trek](https://trek.nasa.gov/mars/)
+  - [CSA: Space resources for STEM and youth organizations](https://www.asc-csa.gc.ca/eng/youth-educators/resources-stem-and-youth-organizations.asp)
+  - [CSA: Food production on the moon and in remote areas](https://www.asc-csa.gc.ca/eng/youth-educators/toolkits/food-production/)
+- Challenge reference: [Build a Junior Astronaut Mission Trainer (Resources)](https://www.spaceappschallenge.org/2026/challenges/junior-astronaut-mission-trainer/?tab=resources)
 
-NASA data and public-domain imagery do not imply NASA endorsement. No NASA official insignia or logo (Meatball or Worm) is used.
+NASA and CSA public data, educational toolkits, and public-domain imagery do not imply NASA or Canadian Space Agency endorsement. No NASA or CSA official insignia or logo (Meatball, Worm, or CSA mark) is used.
 
 ## NASA public-domain imagery (`public/nasa/`)
 

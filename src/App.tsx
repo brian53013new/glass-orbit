@@ -691,8 +691,8 @@ function App() {
         <aside className="source-drawer">
           <div className="drawer-head">
             <div>
-              <p className="eyebrow">TRACEABLE DATA</p>
-              <h2>NASA DONKI</h2>
+              <p className="eyebrow">TRACEABLE DATA &amp; DISCLAIMER</p>
+              <h2>{T('NASA & CSA 官方資料與聲明', 'NASA & CSA SOURCES')}</h2>
             </div>
             <button onClick={() => setSourceOpen(false)} aria-label="Close">
               ×
@@ -717,11 +717,11 @@ function App() {
             </p>
           </div>
           <div className="source-block model">
-            <small>{T('教育模型與未知', 'EDUCATION MODEL + UNKNOWN')}</small>
+            <small>{T('教育模型與非官方背書聲明', 'EDUCATION MODEL & DISCLAIMER')}</small>
             <p>
               {T(
-                `此事件的遊戲護盾目標為 ${event.shieldTarget}。所有資源點都不是劑量、預報、工程設計或 NASA 任務建議。`,
-                `This event’s game shield target is ${event.shieldTarget}. Every resource point is not a dose, forecast, engineering design, or NASA mission recommendation.`,
+                `此事件的遊戲護盾目標為 ${event.shieldTarget}。所有資源點數皆為教育簡化模型，並非真實輻射劑量、預報或 NASA／CSA 任務建議；本專案未使用 NASA 或 CSA 官方徽章，亦不代表任何機構背書。`,
+                `This event’s game shield target is ${event.shieldTarget}. Resource points are educational abstractions only—not real radiation doses, forecasts, or mission advice. No NASA or CSA insignia is used, and use of public data implies no agency endorsement.`,
               )}
             </p>
           </div>
@@ -735,14 +735,8 @@ function App() {
             <dt>{T('原始事件', 'ORIGINAL EVENT')}</dt>
             <dd>{event.record.startTime}</dd>
           </dl>
-          <a href={source.challengeUrl} target="_blank" rel="noreferrer">
-            {T('2026 挑戰：Junior Astronaut Mission Trainer', '2026 challenge: Junior Astronaut Mission Trainer')} ↗
-          </a>
-          <a href={source.officialUrl} target="_blank" rel="noreferrer">
-            NASA DONKI ↗
-          </a>
           <a href={event.record.link} target="_blank" rel="noreferrer">
-            {T('開啟本 CME 記錄', 'Open this CME record')} ↗
+            {T('開啟本 CME 原始記錄', 'Open this CME record')} ↗
           </a>
 
           <div className="source-resources-section">

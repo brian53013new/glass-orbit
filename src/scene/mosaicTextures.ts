@@ -180,13 +180,21 @@ export function makeDetailStripTexture(card: CardDefinition, language: Language,
 
   drawMosaicBackdrop(ctx, w, h, '#ffffff', 18)
 
+  const effectLabels: Record<string, { zh: string; en: string }> = {
+    power: resources.power.label,
+    lifeSupport: resources.lifeSupport.label,
+    shield: resources.shield.label,
+    evidence: { zh: '科學證據', en: 'Evidence' },
+    comms: { zh: '深空通訊', en: 'Comms' },
+  }
+
   const title = text(card.title, language)
   const cost =
-    (Object.entries(card.cost) as [ResourceKey, number][])
-      .map(([key, value]) => `${resources[key].label[language]} -${value}`)
+    Object.entries(card.cost)
+      .map(([key, value]) => `${effectLabels[key]?.[language] ?? key} -${value}`)
       .join(' · ') || (language === 'zh' ? '免費啟動（無消耗）' : 'FREE (NO COST)')
-  const gainParts = (Object.entries(card.effects) as [ResourceKey, number][]).map(
-    ([key, value]) => `${resources[key].label[language]} ${value > 0 ? `+${value}` : value}`,
+  const gainParts = Object.entries(card.effects).map(
+    ([key, value]) => `${effectLabels[key]?.[language] ?? key} ${Number(value) > 0 ? `+${value}` : value}`,
   )
   if (card.id === 'cme-forecast') {
     gainParts.push(language === 'zh' ? '若通訊 ≥1：電力 +1 · 護盾 +1' : 'If Comms ≥1: Power +1 · Shield +1')

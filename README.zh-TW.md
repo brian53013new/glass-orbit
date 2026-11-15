@@ -51,7 +51,19 @@ npm run lint
 | 教育模型 | 遊戲內的護盾目標與各項資源點數（教學簡化規則）。 |
 | 未知與限制 | 不計算真實輻射劑量、暴露風險或太空人實際安全指標。 |
 
-官方參考連結：[NASA DONKI 入口網站](https://ccmc.gsfc.nasa.gov/tools/DONKI/) 與 [2026 NASA Space Apps Challenge 題目頁面](https://www.spaceappschallenge.org/2026/challenges/junior-astronaut-mission-trainer/)。
+官方參考與已整合資料庫（遊戲內點擊 **NASA 資料來源** 及 [`src/data/official-resources.ts`](src/data/official-resources.ts) 皆可查閱）：
+- [2026 NASA Space Apps Challenge 官方資源頁](https://www.spaceappschallenge.org/2026/challenges/junior-astronaut-mission-trainer/?tab=resources)
+
+### NASA 官方資料與 API
+- **[NASA Open APIs](https://api.nasa.gov/)**：NASA 公開 API 入口（APOD、火星探測車影像與 DONKI），提供本遊戲驗證的離線太陽風暴快照。
+- **[Space Weather Database Of Notifications, Knowledge, Information (DONKI)](https://ccmc.gsfc.nasa.gov/tools/DONKI/)**：真實太陽閃焰與日冕物質拋射 (CME) 資料庫，驅動遊戲內風暴事件與護盾防護決策。
+- **[NASA Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/)**（[Search API](https://osdr.nasa.gov/osdr/data/search?term=KEYWORD)）：太空生物學與太空人健康研究庫（骨密度、肌肉量、免疫反應、睡眠），啟發維生支援與健康取捨卡牌。
+- **[RadLab (OSDR Radiation Dosimetry Database)](https://visualization.osdr.nasa.gov/radlab/gui/data-api/)**：國際太空站 (ISS) 實測吸收輻射劑量資料庫，作為護盾優先順序與輻射安全界線教學依據。
+- **[Mars Trek](https://trek.nasa.gov/mars/)**：整合好奇號與毅力號的真實火星表面影像與高程地形平台，對應觀測站右側火星前哨站比較螢幕。
+
+### 合作太空機構資源（加拿大太空總署 CSA）
+- **[CSA：STEM 與青少年太空教育資源](https://www.asc-csa.gc.ca/eng/youth-educators/resources-stem-and-youth-organizations.asp)**：雙語青少年與教育者 STEM 工具，啟發本遊戲 EN / 繁中雙語 NOVA 旁白與新手引導流程。
+- **[CSA：月球與偏遠地區糧食生產工具包](https://www.asc-csa.gc.ca/eng/youth-educators/toolkits/food-production/)**：太空糧食生產、太空人營養與密閉棲息地補給概念，融入「補給交換」與「維生系統」決策循環。
 
 ## 繳交相關文件
 

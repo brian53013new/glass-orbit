@@ -80,7 +80,16 @@ export function RoomScene({
   const [localYaw, setLocalYaw] = useState(viewYaw)
   const [localPitch, setLocalPitch] = useState(0.18)
   const [languageFocused, setLanguageFocused] = useState(false)
-  const [narratorExpanded, setNarratorExpanded] = useState(false)
+  const [narratorExpanded, setNarratorExpanded] = useState(true)
+  const [narratorPos, setNarratorPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
+  const narratorDragRef = useRef<{
+    active: boolean
+    startX: number
+    startY: number
+    originX: number
+    originY: number
+  }>({ active: false, startX: 0, startY: 0, originX: 0, originY: 0 })
+  const [typedChars, setTypedChars] = useState(0)
   const dragState = useRef<{ active: boolean; lastX: number; lastY: number; moved: boolean }>({
     active: false,
     lastX: 0,
@@ -132,6 +141,8 @@ export function RoomScene({
     localStorage.removeItem('glass-orbit-onboarding-v1')
     localStorage.removeItem('glass-orbit-onboarding-v2')
     setTutorial('room')
+    setNarratorExpanded(true)
+    setNarratorPos({ x: 0, y: 0 })
     resetView()
   }
   const nextTutorialStep = () => {
@@ -156,6 +167,58 @@ export function RoomScene({
     if (tutorial === 'play' && run.played.length > previousPlayed.current) finishTutorial('complete')
     previousPlayed.current = run.played.length
   }, [run.played.length, tutorial])
+
+  const currentBeat = buildNarratorBeat(language, tutorial, mission, run)
+  const fullNarratorText = currentBeat.lines.join('\n')
+  const beatKey = `${language}|${tutorial}|${mission.record.activityID}|${run.turns}|${run.outcome}`
+
+  useEffect(() => {
+    if (previewMode) return
+    if (reducedMotion) {
+      setTypedChars(fullNarratorText.length)
+      return
+    }
+    setTypedChars(0)
+    const stepMs = language === 'zh' ? 28 : 18
+    const id = window.setInterval(() => {
+      setTypedChars((prev) => {
+        if (prev >= fullNarratorText.length) {
+          window.clearInterval(id)
+          return prev
+        }
+        return prev + 1
+      })
+    }, stepMs)
+    return () => window.clearInterval(id)
+  }, [beatKey, fullNarratorText.length, language, previewMode, reducedMotion])
+
+  const startNarratorDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    if ((event.target as HTMLElement).closest('button')) return
+    event.currentTarget.setPointerCapture(event.pointerId)
+    narratorDragRef.current = {
+      active: true,
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: narratorPos.x,
+      originY: narratorPos.y,
+    }
+  }
+
+  const moveNarratorDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!narratorDragRef.current.active) return
+    const dx = event.clientX - narratorDragRef.current.startX
+    const dy = event.clientY - narratorDragRef.current.startY
+    const maxX = Math.max(120, window.innerWidth * 0.42)
+    const maxY = Math.max(140, window.innerHeight * 0.65)
+    setNarratorPos({
+      x: THREE.MathUtils.clamp(narratorDragRef.current.originX + dx, -maxX, maxX),
+      y: THREE.MathUtils.clamp(narratorDragRef.current.originY + dy, -36, maxY),
+    })
+  }
+
+  const endNarratorDrag = () => {
+    narratorDragRef.current.active = false
+  }
 
   useEffect(() => {
     const keydown = (event: KeyboardEvent) => {
@@ -357,20 +420,28 @@ export function RoomScene({
         ))}
       </Canvas>
       {!previewMode && (() => {
-        const beat = buildNarratorBeat(language, tutorial, mission, run)
+        const beat = currentBeat
+        const isTyping = typedChars < fullNarratorText.length
+        const visibleText = fullNarratorText.slice(0, typedChars)
+        const visibleLines = visibleText.split('\n')
         return (
       <>
       <div className="hud-narrator-wrap">
         <div className="hud-pill-bar" aria-label="Glass Orbit HUD">
           <span className="hud-pill-disclaimer">{buildMissionGoalSummary(language, mission, run)}</span>
-          <span className="hud-pill-step">{beat.hudLine}</span>
           <button
-            className="hud-narrator-toggle"
+            className={`hud-narrator-toggle ${!narratorExpanded ? 'is-collapsed' : ''}`}
             aria-expanded={narratorExpanded}
             aria-label={language === 'zh' ? '展開或收起旁白' : 'Toggle narrator details'}
             onClick={() => setNarratorExpanded((value) => !value)}
           >
-            {narratorExpanded ? '▴' : '▾'}
+            {narratorExpanded
+              ? language === 'zh'
+                ? 'NOVA 旁白 ▴'
+                : 'NOVA Narrator ▴'
+              : language === 'zh'
+                ? 'NOVA 旁白 ▾'
+                : 'NOVA Narrator ▾'}
           </button>
           {tutorial !== 'complete' && tutorial !== 'skipped' ? (
             <>
@@ -392,21 +463,89 @@ export function RoomScene({
           <button onClick={onOpenSource}>{language === 'zh' ? 'NASA 資料來源' : 'NASA Source'}</button>
           <button onClick={onOpenBrief}>{language === 'zh' ? '任務簡介' : 'Brief'}</button>
         </div>
-        {narratorExpanded && (
-          <div className="hud-narrator-drawer" role="region" aria-label={beat.title}>
-            <div className="hud-narrator-head">
-              <span>{beat.title}</span>
-              <span>{mission.title[language]}</span>
-            </div>
-            <p className="hud-narrator-purpose">{mission.purpose[language]}</p>
-            {beat.lines.map((line, idx) => (
-              <p key={idx} className="hud-narrator-line">
-                {line}
-              </p>
-            ))}
-          </div>
-        )}
       </div>
+
+      {narratorExpanded && (
+        <aside
+          className="narrator-float-window"
+          role="region"
+          aria-label={beat.title}
+          style={{
+            transform: `translate3d(calc(-50% + ${narratorPos.x}px), ${narratorPos.y}px, 0)`,
+          }}
+        >
+          <div
+            className="narrator-drag-bar"
+            onPointerDown={startNarratorDrag}
+            onPointerMove={moveNarratorDrag}
+            onPointerUp={endNarratorDrag}
+            onPointerCancel={endNarratorDrag}
+            title={language === 'zh' ? '按住拖曳移動旁白視窗' : 'Drag to move narrator window'}
+          >
+            <span className="narrator-drag-title">
+              <span className="narrator-grip" aria-hidden="true">⋮⋮</span>
+              <span>{beat.title}</span>
+            </span>
+            <div className="narrator-win-actions">
+              {(narratorPos.x !== 0 || narratorPos.y !== 0) && (
+                <button
+                  type="button"
+                  onClick={() => setNarratorPos({ x: 0, y: 0 })}
+                  title={language === 'zh' ? '視窗歸位' : 'Reset position'}
+                >
+                  {language === 'zh' ? '歸位' : 'Center'}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setNarratorExpanded(false)}
+                aria-label={language === 'zh' ? '收起旁白' : 'Collapse narrator'}
+              >
+                {language === 'zh' ? '收起 —' : 'Hide —'}
+              </button>
+            </div>
+          </div>
+
+          <div
+            className="narrator-body"
+            onClick={() => {
+              if (isTyping) setTypedChars(fullNarratorText.length)
+            }}
+          >
+            <p className="hud-narrator-purpose">{mission.purpose[language]}</p>
+            <div className="narrator-typewriter-box">
+              {visibleLines.map((line, idx) => {
+                const isLast = idx === visibleLines.length - 1
+                return (
+                  <p key={idx} className="hud-narrator-line">
+                    {line}
+                    {isLast && isTyping && <span className="narrator-cursor" aria-hidden="true">▋</span>}
+                  </p>
+                )
+              })}
+            </div>
+            <div className="narrator-footer">
+              <span className="narrator-how-hint">
+                {language === 'zh'
+                  ? '玩法：1. 點手牌看說明 → 2. 再點一次出牌 → 3. 5 回合內守住護盾與維生'
+                  : 'Play: 1. Tap card to inspect → 2. Tap again to play → 3. Meet Shield & Life in 5 turns'}
+              </span>
+              <div className="narrator-footer-btns">
+                {isTyping && (
+                  <button type="button" onClick={() => setTypedChars(fullNarratorText.length)}>
+                    {language === 'zh' ? '顯示全文' : 'Reveal all'}
+                  </button>
+                )}
+                {tutorial !== 'complete' && tutorial !== 'skipped' && (
+                  <button type="button" className="narrator-next-btn" onClick={nextTutorialStep}>
+                    {language === 'zh' ? '下一步 →' : 'Next →'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </aside>
+      )}
       <div className="scene-a11y-controls" aria-label="Glass Orbit scene controls">
         <button onClick={() => turn('left')}>Look left</button>
         <button onClick={() => turn('right')}>Look right</button>

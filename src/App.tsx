@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { RoomScene } from './scene/RoomScene'
 import { soundtrack } from './game/soundtrack'
+import { CHALLENGE_RESOURCES_URL, OFFICIAL_RESOURCES } from './data/official-resources'
 import {
   cards,
   initialRun,
@@ -743,6 +744,40 @@ function App() {
           <a href={event.record.link} target="_blank" rel="noreferrer">
             {T('開啟本 CME 記錄', 'Open this CME record')} ↗
           </a>
+
+          <div className="source-resources-section">
+            <p className="eyebrow" style={{ marginTop: 18 }}>
+              {T('NASA & 合作機構官方資料庫 (7 項)', 'NASA & PARTNER RESOURCES (7)')}
+            </p>
+            <a href={CHALLENGE_RESOURCES_URL} target="_blank" rel="noreferrer" className="source-challenge-link">
+              {T('2026 Space Apps 挑戰官方資源頁', '2026 Space Apps Official Challenge Resources')} ↗
+            </a>
+            <div className="source-resource-list">
+              {OFFICIAL_RESOURCES.map((res) => (
+                <article key={res.id} className="source-resource-item">
+                  <div className="source-resource-head">
+                    <span className={`source-badge ${res.agency.toLowerCase()}`}>{res.agency}</span>
+                    <span className="source-cat">{res.category[language]}</span>
+                  </div>
+                  <h4>
+                    <a href={res.url} target="_blank" rel="noreferrer">
+                      {res.name[language]} ↗
+                    </a>
+                  </h4>
+                  <p className="source-res-summary">{res.summary[language]}</p>
+                  <p className="source-res-game">
+                    <strong>{T('遊戲整合：', 'In Glass Orbit: ')}</strong>
+                    {res.gameIntegration[language]}
+                  </p>
+                  {res.apiUrl && (
+                    <a href={res.apiUrl} target="_blank" rel="noreferrer" className="source-api-link">
+                      OSDR Search API ↗
+                    </a>
+                  )}
+                </article>
+              ))}
+            </div>
+          </div>
         </aside>
       )}
     </main>

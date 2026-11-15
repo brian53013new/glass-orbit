@@ -57,7 +57,18 @@ The command `npm run verify:data` re-hashes the saved JSON and confirms the sele
 | Education model | The fictional shield target and all resource points. |
 | Unknown / limitation | No dose, exposure, location risk, or mission safety result is calculated. |
 
-See the [NASA DONKI portal](https://ccmc.gsfc.nasa.gov/tools/DONKI/) and the [challenge page](https://www.spaceappschallenge.org/2026/challenges/junior-astronaut-mission-trainer/) for their official materials.
+See the [2026 Space Apps Challenge Resources](https://www.spaceappschallenge.org/2026/challenges/junior-astronaut-mission-trainer/?tab=resources) and the integrated official datasets below (also surfaced in-game via **NASA Source** and [`src/data/official-resources.ts`](src/data/official-resources.ts)):
+
+### NASA Data & Resources
+- **[NASA Open APIs](https://api.nasa.gov/)** — Central public API portal (APOD, Mars Rover Photos, DONKI) powering the verified offline CME snapshot.
+- **[Space Weather Database Of Notifications, Knowledge, Information (DONKI)](https://ccmc.gsfc.nasa.gov/tools/DONKI/)** — Real solar flare and CME data driving radiation-shielding and comms-risk scenarios.
+- **[NASA Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/)** ([search API](https://osdr.nasa.gov/osdr/data/search?term=KEYWORD)) — Space biology and astronaut health studies (bone density, muscle mass, immune response, sleep) informing Life Support & Crew trade-offs.
+- **[RadLab (OSDR Radiation Dosimetry Database)](https://visualization.osdr.nasa.gov/radlab/gui/data-api/)** — Real absorbed radiation dose measurements aboard the ISS grounding Storm Shield prioritization and safety disclaimers.
+- **[Mars Trek](https://trek.nasa.gov/mars/)** — Real Mars surface imagery, elevation, and terrain data (Curiosity & Perseverance) anchoring the Mars Outpost comparison terminal.
+
+### Space Agency Partner Resources (CSA)
+- **[CSA: Space resources for STEM and youth organizations](https://www.asc-csa.gc.ca/eng/youth-educators/resources-stem-and-youth-organizations.asp)** — Bilingual youth & educator STEM tools shaping the EN / 繁中 NOVA narrator and Junior Astronaut onboarding.
+- **[CSA: Food production on the moon and in remote areas](https://www.asc-csa.gc.ca/eng/youth-educators/toolkits/food-production/)** — Space nutrition & closed-habitat food production toolkit informing Supply Trade and Life Support cards.
 
 ## Submission material
 

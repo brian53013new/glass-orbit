@@ -418,17 +418,170 @@
   color: #000000;
 }
 
+.source-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  width: min(440px, 100vw);
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow-y: scroll;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 20px 18px 28px;
+  background: rgba(12, 12, 12, 0.97);
+  color: #f2f2f2;
+  border-left: 2px solid #ffffff;
+  box-shadow: -8px 0 28px rgba(0, 0, 0, 0.75);
+  font-family: 'Space Grotesk', 'Noto Sans TC', sans-serif;
+  scrollbar-width: auto;
+  scrollbar-color: #ffffff #1a1a1a;
+}
+
+.source-drawer::-webkit-scrollbar {
+  width: 10px;
+}
+
+.source-drawer::-webkit-scrollbar-track {
+  background: #141414;
+  border-left: 1px solid #333333;
+}
+
+.source-drawer::-webkit-scrollbar-thumb {
+  background: #d8d8d8;
+  border: 2px solid #141414;
+  border-radius: 2px;
+}
+
+.source-drawer::-webkit-scrollbar-thumb:hover {
+  background: #ffffff;
+}
+
+.source-drawer .drawer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid #383838;
+}
+
+.source-drawer .eyebrow {
+  margin: 0 0 4px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #a8a8a8;
+}
+
+.source-drawer h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.source-drawer .drawer-head button {
+  border: 1px solid #ffffff;
+  background: #1a1a1a;
+  color: #ffffff;
+  width: 32px;
+  height: 32px;
+  border-radius: 2px;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.source-drawer .drawer-head button:hover {
+  background: #ffffff;
+  color: #000000;
+}
+
+.source-drawer .source-block {
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  background: #171717;
+  border: 1px solid #3a3a3a;
+  border-left: 3px solid #ffffff;
+  border-radius: 2px;
+}
+
+.source-drawer .source-block.inferred {
+  border-left-color: #b5b5b5;
+}
+
+.source-drawer .source-block.model {
+  border-left-color: #777777;
+}
+
+.source-drawer .source-block small {
+  display: block;
+  margin-bottom: 4px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #ffffff;
+}
+
+.source-drawer .source-block p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #d8d8d8;
+}
+
+.source-drawer dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 12px;
+  margin: 12px 0;
+  padding: 10px 12px;
+  background: #141414;
+  border: 1px solid #2e2e2e;
+  border-radius: 2px;
+  font-size: 12px;
+}
+
+.source-drawer dt {
+  font-family: 'IBM Plex Mono', monospace;
+  color: #9a9a9a;
+  font-weight: 700;
+}
+
+.source-drawer dd {
+  margin: 0;
+  color: #f0f0f0;
+  word-break: break-all;
+}
+
+.source-drawer a {
+  color: #ffffff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.source-drawer a:hover {
+  color: #c8c8c8;
+}
+
 .source-resources-section {
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid #d0dad8;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #3a3a3a;
 }
 
 .source-challenge-link {
   display: inline-block;
-  margin: 6px 0 10px;
+  margin: 6px 0 12px;
   font-weight: 700;
   font-size: 13px;
+  color: #ffffff;
 }
 
 .source-resource-list {
@@ -439,35 +592,38 @@
 
 .source-resource-item {
   padding: 10px 12px;
-  border: 1px solid #c8d6d4;
-  border-radius: 4px;
-  background: #f4f8f7;
+  border: 1px solid #3d3d3d;
+  border-radius: 2px;
+  background: #161616;
 }
 
 .source-resource-head {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 4px;
+  margin-bottom: 5px;
 }
 
 .source-badge {
+  font-family: 'IBM Plex Mono', monospace;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.06em;
   padding: 2px 6px;
   border-radius: 2px;
-  color: #ffffff;
-  background: #173239;
+  color: #000000;
+  background: #ffffff;
 }
 
 .source-badge.csa {
-  background: #5b2c6f;
+  color: #ffffff;
+  background: #2b2b2b;
+  border: 1px solid #ffffff;
 }
 
 .source-cat {
   font-size: 11px;
-  color: #556b70;
+  color: #a8a8a8;
   font-weight: 600;
 }
 
@@ -481,7 +637,7 @@
   margin: 0 0 4px;
   font-size: 12px;
   line-height: 1.45;
-  color: #254047;
+  color: #d0d0d0;
 }
 
 .source-api-link {

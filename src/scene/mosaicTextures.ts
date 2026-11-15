@@ -1,8 +1,8 @@
 import * as THREE from 'three'
 import { resources, text, type CardDefinition, type Language, type MissionEvent, type ResourceKey } from '../types'
 
-const DISPLAY_FONT = '"Noto Sans TC", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif'
-const MONO_FONT = '"JetBrains Mono", "Cascadia Code", "Noto Sans TC", monospace'
+const DISPLAY_FONT = '"Space Grotesk", "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif'
+const MONO_FONT = '"IBM Plex Mono", "JetBrains Mono", "Cascadia Code", "Noto Sans TC", monospace'
 
 export function wrapCanvasText(ctx: CanvasRenderingContext2D, value: string, maxWidth: number): string[] {
   const lines: string[] = []
@@ -51,9 +51,10 @@ export function drawMosaicBackdrop(
 export function makeCrispMosaicTexture(canvas: HTMLCanvasElement) {
   const texture = new THREE.CanvasTexture(canvas)
   texture.colorSpace = THREE.SRGBColorSpace
-  texture.generateMipmaps = false
+  texture.generateMipmaps = true
   texture.magFilter = THREE.LinearFilter
-  texture.minFilter = THREE.LinearFilter
+  texture.minFilter = THREE.LinearMipmapLinearFilter
+  texture.anisotropy = 8
   texture.needsUpdate = true
   return texture
 }

@@ -406,21 +406,30 @@ export function RoomScene({
         {run.outcome !== 'playing' && (
           <ReplayConsole3D language={language} run={run} mission={mission} onReplay={onReplay} onNewEvent={onNewEvent} />
         )}
-        {handCards.map((item, index) => (
-          <CardMesh
-            key={item.id}
-            card={item}
-            index={index}
-            language={language}
-            selected={selected === item.id}
-            detailState={detailState}
-            hovered={hovered === item.id}
-            disabled={played.includes(item.id)}
-            animState={playingCardId === item.id ? 'playing' : drawingCardId === item.id ? 'drawing' : 'idle'}
-            onSelect={onSelect}
-            onHover={onHover}
-          />
-        ))}
+        {handCards.map((item, index) => {
+          const isDisabled = played.includes(item.id)
+          const hasPrereqs = item.prerequisites.every((req) => played.includes(req))
+          const hasResources = (Object.entries(item.cost) as [keyof typeof run.resources, number][]).every(
+            ([key, amount]) => run.resources[key] >= amount,
+          )
+          const playable = run.outcome === 'playing' && !isDisabled && hasPrereqs && hasResources
+          return (
+            <CardMesh
+              key={item.id}
+              card={item}
+              index={index}
+              language={language}
+              selected={selected === item.id}
+              detailState={detailState}
+              hovered={hovered === item.id}
+              disabled={isDisabled}
+              playable={playable}
+              animState={playingCardId === item.id ? 'playing' : drawingCardId === item.id ? 'drawing' : 'idle'}
+              onSelect={onSelect}
+              onHover={onHover}
+            />
+          )
+        })}
       </Canvas>
       {!previewMode && (() => {
         const beat = currentBeat

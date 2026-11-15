@@ -13,6 +13,7 @@ export function CardMesh({
   detailState,
   hovered,
   disabled,
+  playable = true,
   animState = 'idle',
   onSelect,
   onHover,
@@ -24,6 +25,7 @@ export function CardMesh({
   detailState: CardDetailState
   hovered: boolean
   disabled: boolean
+  playable?: boolean
   animState?: 'idle' | 'playing' | 'drawing'
   onSelect: (id: string) => void
   onHover: (id: string | null) => void
@@ -129,15 +131,39 @@ export function CardMesh({
           <boxGeometry args={[0.88, 1.2, 0.11]} />
           <meshStandardMaterial
             color={disabled ? '#2b2b2b' : '#181818'}
-            emissive={animState !== 'idle' || selected ? '#ffffff' : hovered && !disabled ? '#666666' : '#000000'}
-            emissiveIntensity={animState !== 'idle' ? 0.85 : selected ? 0.25 : hovered && !disabled ? 0.2 : 0}
+            emissive={
+              animState !== 'idle'
+                ? '#ffffff'
+                : !playable || disabled
+                  ? '#e03142'
+                  : '#18cf6e'
+            }
+            emissiveIntensity={
+              animState !== 'idle'
+                ? 0.85
+                : !playable || disabled
+                  ? selected || hovered
+                    ? 0.72
+                    : 0.42
+                  : selected
+                    ? 0.75
+                    : hovered
+                      ? 0.62
+                      : 0.34
+            }
             metalness={0.55}
             roughness={0.35}
           />
         </mesh>
         <mesh position={[0, 0.59, 0]}>
           <boxGeometry args={[0.88, 0.03, 0.12]} />
-          <meshStandardMaterial color={disabled ? '#555555' : '#ffffff'} metalness={0.4} roughness={0.25} />
+          <meshStandardMaterial
+            color={!playable || disabled ? '#ff5464' : '#42f598'}
+            emissive={!playable || disabled ? '#e03142' : '#18cf6e'}
+            emissiveIntensity={0.65}
+            metalness={0.35}
+            roughness={0.25}
+          />
         </mesh>
         <mesh position={[0, 0, 0.064]}>
           <planeGeometry args={[0.78, 1.09]} />

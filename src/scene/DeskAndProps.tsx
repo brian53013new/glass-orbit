@@ -161,8 +161,8 @@ export function ReplayConsole3D({
           : `Result: Shield ◇ ${run.resources.shield}/${mission.shieldTarget} · Life ◌ ${run.resources.lifeSupport}/${mission.lifeTarget} · Evid ◈ ${run.evidence}/${mission.evidenceTarget}`,
         reflection,
         language === 'zh'
-          ? '左白鈕：同事件重抽牌組 ｜ 右灰鈕：切換下一筆 NASA 事件'
-          : 'Left White: Replay & Reshuffle | Right Grey: Next NASA Event',
+          ? '點擊下方按鈕：重玩本事件或切換下一筆 NASA 事件'
+          : 'Choose below: Replay this event or load the next NASA event',
       ]),
     [heading, language, run, mission, reflection],
   )

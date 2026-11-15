@@ -90,6 +90,17 @@ export function RoomScene({
     originY: number
   }>({ active: false, startX: 0, startY: 0, originX: 0, originY: 0 })
   const [typedChars, setTypedChars] = useState(0)
+  const [fontsReady, setFontsReady] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    document.fonts?.ready.then(() => {
+      if (active) setFontsReady(true)
+    })
+    return () => {
+      active = false
+    }
+  }, [])
   const dragState = useRef<{ active: boolean; lastX: number; lastY: number; moved: boolean }>({
     active: false,
     lastX: 0,
@@ -393,6 +404,7 @@ export function RoomScene({
         />
         <DeskViewArrow3D direction="left" onTurn={() => turn('left')} />
         <DeskViewArrow3D direction="right" onTurn={() => turn('right')} />
+        <group key={fontsReady ? 'fonts-ok' : 'fonts-init'}>
         <TutorialBeacon3D
           language={language}
           step={tutorial}
@@ -430,6 +442,7 @@ export function RoomScene({
             />
           )
         })}
+        </group>
       </Canvas>
       {!previewMode && (() => {
         const beat = currentBeat

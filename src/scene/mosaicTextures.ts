@@ -1,8 +1,8 @@
 import * as THREE from 'three'
 import { resources, text, type CardDefinition, type Language, type MissionEvent, type ResourceKey } from '../types'
 
-const DISPLAY_FONT = '"Silkscreen", "DotGothic16", "Noto Sans TC", "Microsoft JhengHei", monospace'
-const MONO_FONT = '"Silkscreen", "DotGothic16", "DM Mono", monospace'
+const DISPLAY_FONT = '"Silkscreen", "Cubic 11", "DotGothic16", monospace'
+const MONO_FONT = '"Silkscreen", "Cubic 11", monospace'
 
 export function wrapCanvasText(ctx: CanvasRenderingContext2D, value: string, maxWidth: number): string[] {
   const lines: string[] = []
@@ -109,8 +109,8 @@ export function makeScreenTexture(
 }
 
 export function makeWorldPanelTexture(title: string, lines: string[]) {
-  const w = 520
-  const h = 360
+  const w = 640
+  const h = 324
   const canvas = document.createElement('canvas')
   canvas.width = w
   canvas.height = h
@@ -122,34 +122,34 @@ export function makeWorldPanelTexture(title: string, lines: string[]) {
   ctx.lineWidth = 4
   ctx.strokeRect(3, 3, w - 6, h - 6)
   ctx.fillStyle = '#181818'
-  ctx.fillRect(18, 20, w - 36, 40)
+  ctx.fillRect(18, 18, w - 36, 36)
   ctx.strokeStyle = '#ffffff'
   ctx.lineWidth = 2
-  ctx.strokeRect(18, 20, w - 36, 40)
+  ctx.strokeRect(18, 18, w - 36, 36)
   ctx.fillStyle = '#ffffff'
-  ctx.font = `700 20px ${DISPLAY_FONT}`
-  ctx.fillText(title, 30, 47)
+  ctx.font = `400 18px ${DISPLAY_FONT}`
+  ctx.fillText(title, 28, 43)
 
   ctx.fillStyle = '#ffffff'
-  ctx.font = `400 17px ${DISPLAY_FONT}`
-  let y = 92
+  ctx.font = `400 16px ${DISPLAY_FONT}`
+  let y = 82
   lines
     .flatMap((line) => wrapCanvasText(ctx, line, w - 56))
-    .slice(0, 8)
+    .slice(0, 7)
     .forEach((line) => {
       ctx.fillText(line, 28, y)
-      y += 27
+      y += 26
     })
 
   ctx.fillStyle = '#ffffff'
-  ctx.font = `700 12px ${MONO_FONT}`
-  ctx.fillText('ESC / TAP EMPTY SPACE TO RETURN', 28, h - 22)
+  ctx.font = `400 12px ${MONO_FONT}`
+  ctx.fillText('ESC / TAP EMPTY SPACE TO RETURN', 28, h - 18)
   return makeCrispMosaicTexture(canvas)
 }
 
 export function makeButtonLabelTexture(label: string, bg = '#181818', fg = '#ffffff') {
-  const w = 340
-  const h = 84
+  const w = 332
+  const h = 76
   const canvas = document.createElement('canvas')
   canvas.width = w
   canvas.height = h
@@ -161,7 +161,7 @@ export function makeButtonLabelTexture(label: string, bg = '#181818', fg = '#fff
   ctx.lineWidth = 4
   ctx.strokeRect(2, 2, w - 4, h - 4)
   ctx.fillStyle = fg
-  ctx.font = `700 22px ${DISPLAY_FONT}`
+  ctx.font = `400 20px ${DISPLAY_FONT}`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.fillText(label, w / 2, h / 2 + 1)

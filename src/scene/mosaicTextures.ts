@@ -121,45 +121,76 @@ export function makeWorldPanelTexture(title: string, lines: string[]) {
   ctx.strokeStyle = '#ffffff'
   ctx.lineWidth = 5
   ctx.strokeRect(3, 3, w - 6, h - 6)
+  ctx.fillStyle = '#181818'
+  ctx.fillRect(18, 20, w - 36, 40)
+  ctx.strokeStyle = '#ffffff'
+  ctx.lineWidth = 2
+  ctx.strokeRect(18, 20, w - 36, 40)
   ctx.fillStyle = '#ffffff'
-  ctx.fillRect(18, 20, w - 36, 38)
-  ctx.fillStyle = '#000000'
-  ctx.font = `700 22px ${DISPLAY_FONT}`
-  ctx.fillText(title, 28, 47)
+  ctx.font = `800 22px ${DISPLAY_FONT}`
+  ctx.fillText(title, 30, 47)
 
-  ctx.fillStyle = '#eaeaea'
-  ctx.font = `600 18px ${DISPLAY_FONT}`
-  let y = 94
+  ctx.fillStyle = '#ffffff'
+  ctx.font = `700 18px ${DISPLAY_FONT}`
+  let y = 92
   lines
     .flatMap((line) => wrapCanvasText(ctx, line, w - 56))
     .slice(0, 8)
     .forEach((line) => {
       ctx.fillText(line, 28, y)
-      y += 26
+      y += 27
     })
 
-  ctx.fillStyle = '#8dd2c8'
+  ctx.fillStyle = '#ffffff'
   ctx.font = `700 13px ${MONO_FONT}`
-  ctx.fillText('ESC / TAP EMPTY SPACE TO RETURN', 28, h - 24)
+  ctx.fillText('ESC / TAP EMPTY SPACE TO RETURN', 28, h - 22)
+  return makeCrispMosaicTexture(canvas)
+}
+
+export function makeButtonLabelTexture(label: string, bg = '#181818', fg = '#ffffff') {
+  const w = 340
+  const h = 84
+  const canvas = document.createElement('canvas')
+  canvas.width = w * 2
+  canvas.height = h * 2
+  const ctx = canvas.getContext('2d')!
+  ctx.scale(2, 2)
+  ctx.fillStyle = bg
+  ctx.fillRect(0, 0, w, h)
+  ctx.strokeStyle = '#ffffff'
+  ctx.lineWidth = 4
+  ctx.strokeRect(2, 2, w - 4, h - 4)
+  ctx.fillStyle = fg
+  ctx.font = `800 26px ${DISPLAY_FONT}`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(label, w / 2, h / 2 + 1)
   return makeCrispMosaicTexture(canvas)
 }
 
 export function makeDetailStripTexture(card: CardDefinition, language: Language, mission: MissionEvent) {
   const w = 560
-  const h = 400
+  const h = 440
   const canvas = document.createElement('canvas')
   canvas.width = w * 2
   canvas.height = h * 2
   const ctx = canvas.getContext('2d')!
   ctx.scale(2, 2)
 
-  drawMosaicBackdrop(ctx, w, h, '#5aa7a4', 18)
+  drawMosaicBackdrop(ctx, w, h, '#ffffff', 18)
 
   const title = text(card.title, language)
   const cost =
     (Object.entries(card.cost) as [ResourceKey, number][])
       .map(([key, value]) => `${resources[key].label[language]} -${value}`)
-      .join(' · ') || (language === 'zh' ? '免費啟動（無成本）' : 'FREE (NO COST)')
+      .join(' · ') || (language === 'zh' ? '免費啟動（無消耗）' : 'FREE (NO COST)')
+  const gainParts = (Object.entries(card.effects) as [ResourceKey, number][]).map(
+    ([key, value]) => `${resources[key].label[language]} ${value > 0 ? `+${value}` : value}`,
+  )
+  if (card.id === 'cme-forecast') {
+    gainParts.push(language === 'zh' ? '若通訊 ≥1：電力 +1 · 護盾 +1' : 'If Comms ≥1: Power +1 · Shield +1')
+  }
+  const gain = gainParts.join(' · ') || (language === 'zh' ? '無額外數值' : 'None')
 
   ctx.fillStyle = '#ffffff'
   ctx.fillRect(0, 0, w, 8)
@@ -168,7 +199,7 @@ export function makeDetailStripTexture(card: CardDefinition, language: Language,
   ctx.strokeRect(2, 2, w - 4, h - 4)
 
   ctx.fillStyle = '#ffffff'
-  ctx.font = `700 24px ${DISPLAY_FONT}`
+  ctx.font = `800 24px ${DISPLAY_FONT}`
   ctx.fillText(language === 'zh' ? `卡牌詳情｜${title}` : `CARD BRIEF | ${title}`, 22, 42)
 
   let y = 70
@@ -184,11 +215,11 @@ export function makeDetailStripTexture(card: CardDefinition, language: Language,
     y = 104
   }
 
-  ctx.fillStyle = '#e0e0e0'
-  ctx.font = `600 17px ${DISPLAY_FONT}`
+  ctx.fillStyle = '#ffffff'
+  ctx.font = `600 16px ${DISPLAY_FONT}`
   const detailLines = wrapCanvasText(ctx, text(card.detail, language), w - 44)
-  detailLines.slice(0, 3).forEach((line, i) => ctx.fillText(line, 22, y + i * 24))
-  y += Math.min(detailLines.length, 3) * 24 + 10
+  detailLines.slice(0, 3).forEach((line, i) => ctx.fillText(line, 22, y + i * 22))
+  y += Math.min(detailLines.length, 3) * 22 + 10
 
   ctx.fillStyle = '#1f1f1f'
   ctx.fillRect(22, y - 16, w - 44, 34)
@@ -197,32 +228,33 @@ export function makeDetailStripTexture(card: CardDefinition, language: Language,
   ctx.fillStyle = '#ffffff'
   ctx.font = `700 15px ${DISPLAY_FONT}`
   ctx.fillText(`★ ${text(card.lesson, language)}`, 36, y + 6)
-  y += 38
+  y += 36
 
   const rows = [
-    { label: language === 'zh' ? '資源成本' : 'COST', value: cost },
+    { label: language === 'zh' ? '消耗 COST' : 'COST', value: cost },
+    { label: language === 'zh' ? '獲得 GAIN' : 'GAIN', value: gain },
     { label: language === 'zh' ? 'NASA 來源' : 'NASA SOURCE', value: `DONKI ${mission.record.activityID} (${mission.speed} km/s)` },
     { label: language === 'zh' ? '科學限制' : 'LIMITATION', value: text(card.limitations, language) },
   ]
   rows.forEach((row) => {
-    ctx.fillStyle = '#a0a0a0'
+    ctx.fillStyle = '#d0d0d0'
     ctx.font = `700 13px ${MONO_FONT}`
     ctx.fillText(row.label, 22, y)
-    ctx.fillStyle = '#f2f2f2'
-    ctx.font = `600 14px ${DISPLAY_FONT}`
+    ctx.fillStyle = '#ffffff'
+    ctx.font = `700 14.5px ${DISPLAY_FONT}`
     const rLines = wrapCanvasText(ctx, row.value, w - 150)
     rLines.slice(0, 2).forEach((line, li) => ctx.fillText(line, 132, y + li * 18))
     y += Math.max(24, Math.min(rLines.length, 2) * 18 + 8)
   })
 
-  ctx.fillStyle = '#cccccc'
+  ctx.fillStyle = '#ffffff'
   ctx.font = `700 13px ${MONO_FONT}`
   ctx.fillText(
     language === 'zh'
       ? '再點一次左方卡牌出牌 · 點空白處或 ESC 退回原視角'
       : 'TAP CARD AGAIN TO PLAY · EMPTY SPACE / ESC TO RESTORE',
     22,
-    h - 18,
+    h - 16,
   )
   return makeCrispMosaicTexture(canvas)
 }

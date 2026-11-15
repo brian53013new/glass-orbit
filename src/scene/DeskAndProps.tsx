@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { resources, type CardDefinition, type CardDetailState, type Language, type MissionEvent, type ResourceKey, type RunState, type TutorialStep } from '../types'
 import { buildNarratorBeat } from '../game/narrator'
-import { makeDetailStripTexture, makeDialLabelTexture, makePillarLabelTexture, makeTutorialTexture, makeWorldPanelTexture } from './mosaicTextures'
+import { makeButtonLabelTexture, makeDetailStripTexture, makeDialLabelTexture, makePillarLabelTexture, makeTutorialTexture, makeWorldPanelTexture } from './mosaicTextures'
 
 export function Desk({ onInspect, inspectReady }: { onInspect: () => void; inspectReady: boolean }) {
   const inlay = useMemo(
@@ -93,11 +93,11 @@ export function DetailPlaque3D({
       scale={[s, s, s]}
     >
       <mesh castShadow>
-        <boxGeometry args={[3.5, 2.52, 0.14]} />
+        <boxGeometry args={[3.5, 2.74, 0.14]} />
         <meshPhysicalMaterial color="#141414" metalness={0.54} roughness={0.28} clearcoat={0.42} />
       </mesh>
       <mesh position={[0, 0, 0.085]}>
-        <planeGeometry args={[3.32, 2.34]} />
+        <planeGeometry args={[3.32, 2.58]} />
         <meshBasicMaterial map={texture} toneMapped={false} />
       </mesh>
     </group>
@@ -166,7 +166,19 @@ export function ReplayConsole3D({
       ]),
     [heading, language, run, mission, reflection],
   )
-  useEffect(() => () => texture.dispose(), [texture])
+  const replayBtnTex = useMemo(
+    () => makeButtonLabelTexture(language === 'zh' ? '↻ 重玩本事件' : '↻ REPLAY EVENT', '#1a1a1a', '#ffffff'),
+    [language],
+  )
+  const nextBtnTex = useMemo(
+    () => makeButtonLabelTexture(language === 'zh' ? '▶ 下一筆 NASA 事件' : '▶ NEXT NASA EVENT', '#262626', '#ffffff'),
+    [language],
+  )
+  useEffect(() => () => {
+    texture.dispose()
+    replayBtnTex.dispose()
+    nextBtnTex.dispose()
+  }, [texture, replayBtnTex, nextBtnTex])
   const position: [number, number, number] = compact ? [0, 3.5, -1.4] : [0, 1.68, 1.15]
   return (
     <group position={position} scale={compact ? [0.62, 0.62, 0.62] : [0.96, 0.96, 0.96]}>
@@ -187,7 +199,11 @@ export function ReplayConsole3D({
       >
         <mesh>
           <boxGeometry args={[1.7, 0.42, 0.18]} />
-          <meshStandardMaterial color="#e0e0e0" emissive="#ffffff" emissiveIntensity={0.25} />
+          <meshStandardMaterial color="#181818" />
+        </mesh>
+        <mesh position={[0, 0, 0.095]}>
+          <planeGeometry args={[1.66, 0.38]} />
+          <meshBasicMaterial map={replayBtnTex} toneMapped={false} />
         </mesh>
       </group>
       <group
@@ -199,7 +215,11 @@ export function ReplayConsole3D({
       >
         <mesh>
           <boxGeometry args={[1.7, 0.42, 0.18]} />
-          <meshStandardMaterial color="#666666" emissive="#999999" emissiveIntensity={0.25} />
+          <meshStandardMaterial color="#262626" />
+        </mesh>
+        <mesh position={[0, 0, 0.095]}>
+          <planeGeometry args={[1.66, 0.38]} />
+          <meshBasicMaterial map={nextBtnTex} toneMapped={false} />
         </mesh>
       </group>
     </group>

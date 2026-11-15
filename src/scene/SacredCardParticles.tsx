@@ -74,7 +74,7 @@ export function SacredCardParticles({
   return (
     <instancedMesh ref={meshRef} args={[undefined, undefined, 36]}>
       <octahedronGeometry args={[1, 0]} />
-      <meshBasicMaterial vertexColors transparent opacity={0.92} toneMapped={false} />
+      <meshBasicMaterial transparent opacity={0.92} toneMapped={false} />
     </instancedMesh>
   )
 }
@@ -149,7 +149,7 @@ export function MinecraftCardStatusParticles({ playable }: { playable: boolean }
   return (
     <instancedMesh ref={meshRef} args={[undefined, undefined, 34]}>
       <boxGeometry args={[1, 1, 1]} />
-      <meshBasicMaterial vertexColors transparent opacity={0.88} toneMapped={false} />
+      <meshBasicMaterial transparent opacity={0.9} toneMapped={false} />
     </instancedMesh>
   )
 }

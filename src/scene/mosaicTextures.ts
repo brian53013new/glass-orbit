@@ -168,14 +168,14 @@ export function makeButtonLabelTexture(label: string, bg = '#181818', fg = '#fff
   return makeCrispMosaicTexture(canvas)
 }
 
-export function makeDetailStripTexture(card: CardDefinition, language: Language, mission: MissionEvent) {
+export function makeDetailStripTexture(card: CardDefinition, language: Language, _mission: MissionEvent) {
   const w = 560
-  const h = 440
+  const h = 435
   const canvas = document.createElement('canvas')
-  canvas.width = w * 2
-  canvas.height = h * 2
+  canvas.width = w
+  canvas.height = h
   const ctx = canvas.getContext('2d')!
-  ctx.scale(2, 2)
+  ctx.imageSmoothingEnabled = false
 
   drawMosaicBackdrop(ctx, w, h, '#ffffff', 18)
 
@@ -207,7 +207,7 @@ export function makeDetailStripTexture(card: CardDefinition, language: Language,
   ctx.strokeRect(2, 2, w - 4, h - 4)
 
   ctx.fillStyle = '#ffffff'
-  ctx.font = `800 24px ${DISPLAY_FONT}`
+  ctx.font = `400 22px ${DISPLAY_FONT}`
   ctx.fillText(language === 'zh' ? `卡牌詳情｜${title}` : `CARD BRIEF | ${title}`, 22, 42)
 
   let y = 70
@@ -218,45 +218,53 @@ export function makeDetailStripTexture(card: CardDefinition, language: Language,
     ctx.lineWidth = 1.5
     ctx.strokeRect(22, 54, w - 44, 28)
     ctx.fillStyle = '#ffffff'
-    ctx.font = `700 15px ${DISPLAY_FONT}`
+    ctx.font = `400 14px ${DISPLAY_FONT}`
     ctx.fillText(text(card.specialSkill, language), 32, 73)
     y = 104
   }
 
   ctx.fillStyle = '#ffffff'
-  ctx.font = `600 16px ${DISPLAY_FONT}`
+  ctx.font = `400 15.5px ${DISPLAY_FONT}`
   const detailLines = wrapCanvasText(ctx, text(card.detail, language), w - 44)
-  detailLines.slice(0, 3).forEach((line, i) => ctx.fillText(line, 22, y + i * 22))
-  y += Math.min(detailLines.length, 3) * 22 + 10
+  detailLines.slice(0, 5).forEach((line, i) => ctx.fillText(line, 22, y + i * 21))
+  y += Math.min(detailLines.length, 5) * 21 + 10
 
   ctx.fillStyle = '#1f1f1f'
-  ctx.fillRect(22, y - 16, w - 44, 34)
+  ctx.fillRect(22, y - 16, w - 44, 32)
   ctx.fillStyle = '#ffffff'
-  ctx.fillRect(22, y - 16, 6, 34)
+  ctx.fillRect(22, y - 16, 6, 32)
   ctx.fillStyle = '#ffffff'
-  ctx.font = `700 15px ${DISPLAY_FONT}`
-  ctx.fillText(`★ ${text(card.lesson, language)}`, 36, y + 6)
-  y += 36
+  ctx.font = `400 14px ${DISPLAY_FONT}`
+  ctx.fillText(`★ ${text(card.lesson, language)}`, 36, y + 5)
+  y += 32
+
+  const prereqText = card.prerequisites.length
+    ? language === 'zh'
+      ? '需先打出「儲能分配」'
+      : 'Requires Power Reserve first'
+    : language === 'zh'
+      ? '無前置條件（隨時可出）'
+      : 'No prerequisite'
 
   const rows = [
     { label: language === 'zh' ? '消耗 COST' : 'COST', value: cost },
     { label: language === 'zh' ? '獲得 GAIN' : 'GAIN', value: gain },
-    { label: language === 'zh' ? 'NASA 來源' : 'NASA SOURCE', value: `DONKI ${mission.record.activityID} (${mission.speed} km/s)` },
+    { label: language === 'zh' ? '前置 PREREQ' : 'PREREQ', value: prereqText },
     { label: language === 'zh' ? '科學限制' : 'LIMITATION', value: text(card.limitations, language) },
   ]
   rows.forEach((row) => {
     ctx.fillStyle = '#d0d0d0'
-    ctx.font = `700 13px ${MONO_FONT}`
+    ctx.font = `400 12.5px ${MONO_FONT}`
     ctx.fillText(row.label, 22, y)
     ctx.fillStyle = '#ffffff'
-    ctx.font = `700 14.5px ${DISPLAY_FONT}`
+    ctx.font = `400 14px ${DISPLAY_FONT}`
     const rLines = wrapCanvasText(ctx, row.value, w - 150)
     rLines.slice(0, 2).forEach((line, li) => ctx.fillText(line, 132, y + li * 18))
-    y += Math.max(24, Math.min(rLines.length, 2) * 18 + 8)
+    y += Math.max(22, Math.min(rLines.length, 2) * 18 + 6)
   })
 
   ctx.fillStyle = '#ffffff'
-  ctx.font = `700 13px ${MONO_FONT}`
+  ctx.font = `400 12px ${MONO_FONT}`
   ctx.fillText(
     language === 'zh'
       ? '再點一次左方卡牌出牌 · 點空白處或 ESC 退回原視角'

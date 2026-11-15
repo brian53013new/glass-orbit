@@ -192,8 +192,8 @@ export const cards: CardDefinition[] = [
     { zh: '展開太陽能翼', en: 'Deploy Solar Wing' },
     { zh: '免費啟動：電力 +2（特技：無消耗發電）。', en: 'Free deploy: power +2 (Skill: zero-cost charge).' },
     {
-      zh: '在日照充足時展開備用太陽能陣列，立即替基地電池補充能量。',
-      en: 'Deploy spare solar arrays in sunlight to recharge base batteries immediately.',
+      zh: '在陽光直射的軌道窗口展開折疊式太陽能翼陣列！無需消耗任何資源，立刻替穹頂主電池回充 2 格電力，是扭轉缺電危機的關鍵起手。',
+      en: 'Unfurl foldable solar wings during peak sunlight! At zero cost, it immediately refills 2 power bars—the ideal opener when batteries run dry.',
     },
     { zh: '善用環境日照補充能源。', en: 'Harvest sunlight when available.' },
     {},
@@ -212,8 +212,8 @@ export const cards: CardDefinition[] = [
     { zh: '水牆輻射屏蔽', en: 'Water Wall Shield' },
     { zh: '消耗 1 維生，護盾 +2（免前置直接防護）。', en: 'Spend 1 life support; shield +2 (no prerequisite).' },
     {
-      zh: 'NASA Artemis 任務利用飲水箱與氫含量高的材料圍在艙壁旁，阻擋太陽高能粒子！',
-      en: 'NASA Artemis uses water tanks along cabin walls—hydrogen-rich water blocks solar particles!',
+      zh: '靈感來自 NASA Artemis 獵戶座太空船設計：把高含氫量的飲水箱貼緊艙壁排列形成水牆，不需等待「儲能分配」前置卡就能直接擋下 2 格太陽粒子！',
+      en: 'Modeled on NASA Artemis Orion crew cabins: line walls with hydrogen-rich water tanks to block 2 storm hits immediately—no reserve prerequisite needed!',
     },
     { zh: '水不只用來喝，還能擋輻射。', en: 'Water hydrates crew and blocks radiation.' },
     { lifeSupport: 1 },
@@ -232,8 +232,8 @@ export const cards: CardDefinition[] = [
     { zh: 'CME 到達預報', en: 'CME Arrival Forecast' },
     { zh: '免費：科學證據 +1；若通訊 ≥1 額外電力 +1、護盾 +1。', en: 'Free: evidence +1; if Comms ≥1, +1 power & +1 shield.' },
     {
-      zh: '結合 SOHO 日冕儀與地球天線追蹤，提前算出太陽風暴到達時間並自動預警！',
-      en: 'Combine coronagraph imagery and Earth comms to forecast CME arrival and pre-arm shields.',
+      zh: '結合 SOHO 日冕儀影像與深空天線追蹤 CME 抵達時間！只要場上已建立至少 1 格深空通訊，就能提前預警並額外自動補上 +1 電力與 +1 護盾。',
+      en: 'Fuse SOHO coronagraph imagery with Earth antenna tracking to time CME arrival! If Comms ≥1 is active, pre-alert automation grants an extra +1 Power & +1 Shield.',
     },
     { zh: '提前觀測＋通訊＝爭取預警時間。', en: 'Observation + comms buys warning time.' },
     {},
@@ -252,8 +252,8 @@ export const cards: CardDefinition[] = [
     { zh: '反應爐超頻', en: 'Core Overdrive' },
     { zh: '消耗 1 維生，電力 +3、護盾 +1（高風險調度）。', en: 'Spend 1 life support; power +3 & shield +1.' },
     {
-      zh: '緊急時刻降低部分艙區空調，把所有電力集中給護盾與主匯流排！',
-      en: 'Temporarily lower cabin cooling to route emergency power to shields and main bus.',
+      zh: '風暴壓境時的緊急高壓調度！暫時縮減部分艙區冷卻與空氣循環（-1 維生），把反應爐與主匯流排推上超頻狀態，一口氣爆發 +3 電力與 +1 護盾！',
+      en: 'Emergency bus reroute under storm pressure! Trim non-critical cabin cooling (-1 life support) to overdrive the reactor for a massive +3 Power & +1 Shield surge.',
     },
     { zh: '緊急超頻能救場，但會壓縮維生餘裕。', en: 'Overdrive buys power at a life-support cost.' },
     { lifeSupport: 1 },
